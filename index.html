@@ -952,6 +952,116 @@ body{
   100%{left:160%}
 }
 
+
+.fancyAlertOverlay{
+  position:fixed;
+  inset:0;
+  background:rgba(24,30,37,.42);
+  backdrop-filter:blur(6px);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:12000;
+  padding:20px;
+}
+.fancyAlertOverlay.active{display:flex}
+.fancyAlertCard{
+  width:min(390px,92vw);
+  background:linear-gradient(180deg,#fffdf9 0%, #f8f2ea 100%);
+  border:1px solid rgba(201,161,95,.30);
+  border-radius:28px;
+  box-shadow:0 24px 60px rgba(39,70,83,.22);
+  padding:22px 18px 18px;
+  position:relative;
+  overflow:hidden;
+}
+.fancyAlertCard::before{
+  content:"";
+  position:absolute;
+  inset:0 auto auto 0;
+  width:100%;
+  height:6px;
+  background:linear-gradient(135deg,#567e86,#c9a15f);
+}
+.fancyAlertClose{
+  position:absolute;
+  top:12px;
+  left:12px;
+  width:36px;
+  height:36px;
+  border:0;
+  border-radius:12px;
+  background:linear-gradient(135deg,#f6eee4,#ead7c2);
+  color:#6a5451;
+  font-size:22px;
+  line-height:1;
+  cursor:pointer;
+  font-weight:1000;
+}
+.fancyAlertIcon{
+  width:66px;
+  height:66px;
+  margin:6px auto 12px;
+  border-radius:22px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:linear-gradient(135deg,rgba(86,126,134,.14),rgba(201,161,95,.22));
+  color:#274653;
+  font-size:30px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.7);
+}
+.fancyAlertTitle{
+  margin:0 0 8px;
+  text-align:center;
+  color:#274653;
+  font-size:24px;
+  font-weight:1000;
+}
+.fancyAlertText{
+  margin:0;
+  text-align:center;
+  color:#6b7280;
+  font-size:15px;
+  line-height:1.9;
+  font-weight:900;
+}
+.fancyAlertActions{
+  display:flex;
+  gap:10px;
+  justify-content:center;
+  margin-top:18px;
+}
+.fancyAlertBtn{
+  min-width:138px;
+  border:0;
+  border-radius:16px;
+  padding:13px 18px;
+  font-size:16px;
+  font-weight:1000;
+  cursor:pointer;
+}
+.fancyAlertBtn.primary{
+  background:linear-gradient(135deg,#567e86,#c9a15f);
+  color:#fff;
+  box-shadow:0 12px 22px rgba(39,70,83,.18);
+}
+.fancyAlertBtn.secondary{
+  background:linear-gradient(135deg,#f6eee4,#ead7c2);
+  color:#6a5451;
+}
+
+
+.fancyAlertOverlay,
+.fancyAlertCard,
+.fancyAlertClose,
+.fancyAlertBtn{
+  pointer-events:auto !important;
+}
+.fancyAlertCard{
+  z-index:12001;
+}
+
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
@@ -2844,6 +2954,215 @@ function generateMergedPdf(){
 document.addEventListener('click', function(e){
   if(e.target && e.target.id === 'mergedPdfBtn') generateMergedPdf();
 });
+</script>
+
+
+<script>
+(function(){
+  function qs(s){ return document.querySelector(s); }
+  function qsa(s){ return Array.from(document.querySelectorAll(s)); }
+
+  function cleanPhoneFallback(v){ return String(v||'').replace(/\D/g,'').trim(); }
+  function isFullNameFallback(name){ return String(name||'').trim().split(/\s+/).filter(Boolean).length >= 4; }
+
+  function openFancyAlert(title, text, icon){
+    var overlay = qs('#fancyAlertOverlay');
+    var titleEl = qs('#fancyAlertTitle');
+    var textEl = qs('#fancyAlertText');
+    var iconEl = qs('#fancyAlertIcon');
+    if(titleEl) titleEl.textContent = title || 'تنبيه';
+    if(textEl) textEl.textContent = text || '';
+    if(iconEl) iconEl.textContent = icon || '✓';
+    if(overlay) overlay.classList.add('active');
+  }
+  function closeFancyAlert(){
+    var overlay = qs('#fancyAlertOverlay');
+    if(overlay) overlay.classList.remove('active');
+  }
+
+  function getRecordsFallback(){
+    try{ return JSON.parse(localStorage.getItem('masar_mobile_records')||'[]'); }catch(e){ return []; }
+  }
+  function setRecordsFallback(v){
+    localStorage.setItem('masar_mobile_records', JSON.stringify(v));
+  }
+
+  function renderContestantsFallback(){
+    var body = qs('#contestantsTableBody');
+    if(!body) return;
+    var rows = getRecordsFallback();
+    body.innerHTML = rows.length ? rows.map(function(r){
+      var active = !r.cancelled;
+      return '<tr><td>' + (r.name||'—') + '</td><td>' + (r.grade||'—') + '</td><td>' + (r.final||r.sorting||r.nomination||'قيد الترشيح') + '</td><td><span class="statusBadge ' + (active?'statusActive':'statusInactive') + '"><span class="statusDot"></span>' + (active?'نشط':'غير نشط') + '</span></td></tr>';
+    }).join('') : '<tr><td colspan="4">لا يوجد متسابقون حتى الآن</td></tr>';
+  }
+
+  function safeShowPage(id){
+    qsa('.page').forEach(function(p){ p.classList.remove('active'); });
+    var page = document.getElementById(id);
+    if(page) page.classList.add('active');
+
+    qsa('.navBtn').forEach(function(b){ b.classList.remove('active'); });
+    qsa('.navBtn').forEach(function(b){
+      if((b.dataset && b.dataset.page === id) || (b.dataset && b.dataset.home && id === 'homePage')){
+        b.classList.add('active');
+      }
+    });
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+  window.showPage = safeShowPage;
+
+  function bindOnce(el, evt, fn){
+    if(!el) return;
+    var key = 'bound_' + evt;
+    if(el.dataset[key] === '1') return;
+    el.dataset[key] = '1';
+    el.addEventListener(evt, fn);
+  }
+
+  function initFallbackButtons(){
+    bindOnce(qs('#goAdminHero'), 'click', function(){ safeShowPage('adminPage'); });
+    bindOnce(qs('#goStatusHero'), 'click', function(){ safeShowPage('infoPage'); });
+    bindOnce(qs('#goRegisterHero'), 'click', function(){ safeShowPage('registerPage'); });
+
+    qsa('.backBtn').forEach(function(btn){
+      bindOnce(btn, 'click', function(){
+        safeShowPage(this.getAttribute('data-back') || 'homePage');
+      });
+    });
+
+    qsa('.navBtn').forEach(function(btn){
+      bindOnce(btn, 'click', function(){
+        var page = this.dataset.page || (this.dataset.home ? 'homePage' : '');
+        if(page) safeShowPage(page);
+      });
+    });
+
+    qsa('.infoTab').forEach(function(tab){
+      bindOnce(tab, 'click', function(){
+        qsa('.infoTab').forEach(function(t){ t.classList.remove('active'); });
+        qsa('.infoPane').forEach(function(p){ p.classList.remove('active'); });
+        this.classList.add('active');
+        var pane = this.dataset.pane;
+        if(pane && qs('#'+pane)) qs('#'+pane).classList.add('active');
+      });
+    });
+
+    bindOnce(qs('#clearRegisterBtn'), 'click', function(){
+      ['studentName','grade','phone','notes'].forEach(function(id){
+        var el = qs('#'+id);
+        if(el) el.value = '';
+      });
+    });
+
+    bindOnce(qs('#saveBtn'), 'click', function(){
+      var name = (qs('#studentName')?.value || '').trim();
+      var grade = (qs('#grade')?.value || '').trim();
+      var phone = cleanPhoneFallback(qs('#phone')?.value || '');
+      var notes = (qs('#notes')?.value || '').trim();
+
+      if(!isFullNameFallback(name)){
+        openFancyAlert('تنبيه','يشترط إدخال الاسم الرباعي.','!');
+        return;
+      }
+      if(!grade){
+        openFancyAlert('تنبيه','اختاري الصف.','!');
+        return;
+      }
+      if(phone.length < 9){
+        openFancyAlert('تنبيه','أدخلي رقم ولي الأمر بشكل صحيح.','!');
+        return;
+      }
+
+      var rows = getRecordsFallback();
+      var existing = rows.findIndex(function(r){ return cleanPhoneFallback(r.phone) === phone; });
+      var record = {
+        name:name,
+        grade:grade,
+        phone:phone,
+        notes:notes,
+        createdAt:new Date().toLocaleString('ar-SA'),
+        nomination:'قيد الترشيح',
+        sorting:'بانتظار الفرز',
+        final:'بانتظار النهائي',
+        cancelled:false
+      };
+
+      if(existing >= 0){
+        rows[existing] = Object.assign({}, rows[existing], record);
+      }else{
+        rows.push(record);
+      }
+
+      setRecordsFallback(rows);
+      renderContestantsFallback();
+      openFancyAlert('تم بنجاح','تم تسجيل الطالب/ة بنجاح.','✓');
+      safeShowPage('contestantsPage');
+    });
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', initFallbackButtons);
+  } else {
+    initFallbackButtons();
+  }
+})();
+</script>
+
+
+<div id="fancyAlertOverlay" class="fancyAlertOverlay">
+  <div class="fancyAlertCard">
+    <button id="fancyAlertClose" class="fancyAlertClose" type="button">×</button>
+    <div id="fancyAlertIcon" class="fancyAlertIcon">✓</div>
+    <h3 id="fancyAlertTitle" class="fancyAlertTitle">تنبيه</h3>
+    <p id="fancyAlertText" class="fancyAlertText">تمت العملية بنجاح.</p>
+    <div class="fancyAlertActions">
+      <button id="fancyAlertOk" class="fancyAlertBtn primary" type="button">إغلاق</button>
+    </div>
+  </div>
+</div>
+
+
+<script>
+(function(){
+  function closeFancyAlertNow(){
+    var overlay = document.getElementById('fancyAlertOverlay');
+    if(overlay) overlay.classList.remove('active');
+  }
+  window.closeFancyAlert = closeFancyAlertNow;
+
+  function bindFancyAlertNow(){
+    var ok = document.getElementById('fancyAlertOk');
+    var close = document.getElementById('fancyAlertClose');
+    var overlay = document.getElementById('fancyAlertOverlay');
+
+    if(ok && ok.dataset.fancyBound !== '1'){
+      ok.dataset.fancyBound = '1';
+      ok.onclick = closeFancyAlertNow;
+      ok.addEventListener('click', closeFancyAlertNow);
+      ok.style.pointerEvents = 'auto';
+    }
+    if(close && close.dataset.fancyBound !== '1'){
+      close.dataset.fancyBound = '1';
+      close.onclick = closeFancyAlertNow;
+      close.addEventListener('click', closeFancyAlertNow);
+      close.style.pointerEvents = 'auto';
+    }
+    if(overlay && overlay.dataset.fancyBound !== '1'){
+      overlay.dataset.fancyBound = '1';
+      overlay.addEventListener('click', function(e){
+        if(e.target === overlay) closeFancyAlertNow();
+      });
+    }
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', bindFancyAlertNow);
+  } else {
+    bindFancyAlertNow();
+  }
+  window.addEventListener('load', bindFancyAlertNow);
+})();
 </script>
 
 </body>
