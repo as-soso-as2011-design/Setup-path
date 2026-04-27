@@ -4624,7 +4624,7 @@ document.addEventListener('click', function(e){
     return merged;
   };
   function fullName(name){ return String(name||'').trim().split(/\s+/).filter(Boolean).length >= 4; }
-  function alertMsg(t,m,icon){ if(typeof window.openFancyAlert==='function') window.openFancyAlert(t,m,icon||'✓'); else if(typeof window.showFancyAlert==='function') window.showFancyAlert(t,m); else { const box=document.querySelector('#registerMsg')||document.querySelector('#mainMsg'); if(box){ box.textContent=m; box.classList.remove('hidden'); } } }
+  function alertMsg(t,m){ if(typeof window.showFancyAlert==='function') window.showFancyAlert(t,m); else alert(m); }
   async function registerFromMain(e){
     const btn = e.target && e.target.closest && e.target.closest('#saveBtn');
     if(!btn) return;
@@ -4639,7 +4639,7 @@ document.addEventListener('click', function(e){
     const rec = {name, grade, phone, notes, createdAt:new Date().toLocaleString('ar-SA'), updatedAt:new Date().toLocaleString('ar-SA'), nomination:'قيد الترشيح', sorting:'بانتظار الفرز', final:'بانتظار النهائي', cancelled:false, source:'masar_aladad_site/records'};
     await saveMerged([rec]);
     ['studentName','grade','phone','notes'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
-    alertMsg('تم حفظ البيانات بنجاح','تم حفظ البيانات بنجاح ✅','✓');
+    alertMsg('تم بنجاح','تم تسجيل الطالب/ة وحفظه في records بدون حذف السابقين.');
     if(typeof showPage==='function') showPage('contestantsPage');
     return false;
   }
@@ -4719,5 +4719,70 @@ document.addEventListener('click', function(e){
     new MutationObserver(function(){ clearTimeout(timer); timer=setTimeout(function(){walk(document.body,current)},250); }).observe(document.body,{childList:true,subtree:true});
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();
+})();
+</script>
+
+<script id="masar-final-success-card-fix">
+(function(){
+  function ensureFancyAlert(){
+    var overlay = document.getElementById('fancyAlertOverlay');
+    if(!overlay){
+      overlay = document.createElement('div');
+      overlay.id = 'fancyAlertOverlay';
+      overlay.className = 'fancyAlertOverlay';
+      overlay.innerHTML = '<div class="fancyAlertCard"><button id="fancyAlertClose" class="fancyAlertClose" type="button">×</button><div id="fancyAlertIcon" class="fancyAlertIcon">✓</div><h3 id="fancyAlertTitle" class="fancyAlertTitle">تم حفظ البيانات بنجاح ✅</h3><p id="fancyAlertText" class="fancyAlertText">تم تسجيل الطالب/ة وحفظ البيانات بنجاح.</p><div class="fancyAlertActions"><button id="fancyAlertOk" class="fancyAlertBtn primary" type="button">إغلاق</button></div></div>';
+      document.body.appendChild(overlay);
+    }
+    return overlay;
+  }
+  function closeCard(){
+    var overlay = document.getElementById('fancyAlertOverlay');
+    if(overlay){ overlay.classList.remove('active'); overlay.style.display = 'none'; }
+  }
+  function bindClose(){
+    var ok = document.getElementById('fancyAlertOk');
+    var x = document.getElementById('fancyAlertClose');
+    var overlay = document.getElementById('fancyAlertOverlay');
+    if(ok) ok.onclick = closeCard;
+    if(x) x.onclick = closeCard;
+    if(overlay && overlay.dataset.finalSuccessBound !== '1'){
+      overlay.dataset.finalSuccessBound = '1';
+      overlay.addEventListener('click', function(e){ if(e.target === overlay) closeCard(); });
+    }
+  }
+  function showCard(title, text, icon){
+    var overlay = ensureFancyAlert();
+    var titleEl = document.getElementById('fancyAlertTitle');
+    var textEl = document.getElementById('fancyAlertText');
+    var iconEl = document.getElementById('fancyAlertIcon');
+    var successTitle = 'تم حفظ البيانات بنجاح ✅';
+    var successText = 'تم تسجيل الطالب/ة وحفظ البيانات بنجاح.';
+    var t = String(title || '');
+    var m = String(text || '');
+    if(t.indexOf('تم بنجاح') !== -1 || m.indexOf('records') !== -1 || m.indexOf('تسجيل الطالب') !== -1){
+      title = successTitle;
+      text = successText;
+      icon = '✓';
+    }
+    if(titleEl) titleEl.textContent = title || successTitle;
+    if(textEl) textEl.textContent = text || successText;
+    if(iconEl) iconEl.textContent = icon || '✓';
+    overlay.style.display = 'flex';
+    overlay.style.zIndex = '12000';
+    overlay.classList.add('active');
+    bindClose();
+  }
+  window.showFancyAlert = showCard;
+  window.showSuccessSaveAlert = function(){ showCard('تم حفظ البيانات بنجاح ✅','تم تسجيل الطالب/ة وحفظ البيانات بنجاح.','✓'); };
+  var nativeAlert = window.alert;
+  window.alert = function(message){
+    var m = String(message || '');
+    if(m.indexOf('تم تسجيل') !== -1 || m.indexOf('حفظ') !== -1 || m.indexOf('records') !== -1){
+      showCard('تم حفظ البيانات بنجاح ✅','تم تسجيل الطالب/ة وحفظ البيانات بنجاح.','✓');
+    } else {
+      showCard('تنبيه', m, '!');
+    }
+  };
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bindClose); else bindClose();
 })();
 </script>
