@@ -2262,6 +2262,44 @@ function setCountdownSettings(v){ safeWrite(COUNTDOWN_SETTINGS_KEY, v); syncClou
 async function syncCloudDoc(docId, value){
   if(!firebaseReady || !firebaseDb) return;
   try{
+    // حماية مهمة: سجلات الطلاب لا تُستبدل بقائمة ناقصة أو فارغة.
+    // يتم الدمج مع الموجود في Firestore حتى لا يختفي الطلاب السابقون عند تسجيل طالب جديد.
+    if(docId === CLOUD_DOCS.records){
+      const ref = firebaseDb.collection(FIREBASE_COLLECTION).doc(docId);
+      const snap = await ref.get();
+      const oldData = snap.exists ? (snap.data() || {}) : {};
+      const oldList = Array.isArray(oldData.value) ? oldData.value : [];
+      const newList = Array.isArray(value) ? value : [];
+      if(oldList.length && !newList.length){
+        console.warn('تم منع رفع قائمة سجلات فارغة حتى لا تُمسح بيانات التسجيل.');
+        return;
+      }
+      const keyOf = function(r){
+        const phone = String((r && (r.phone || r.parentPhone || r.statusPhone)) || '').replace(/\D/g,'');
+        const name = String((r && (r.name || r.studentName || r.registerName)) || '').trim();
+        const grade = String((r && r.grade) || '').trim();
+        return phone ? ('p:' + phone) : ('n:' + name + '|' + grade);
+      };
+      const map = new Map();
+      oldList.forEach(function(r){ if(r) map.set(keyOf(r), r); });
+      newList.forEach(function(r){
+        if(!r) return;
+        const normalized = Object.assign({}, r, {
+          name: r.name || r.studentName || r.registerName || '',
+          phone: String(r.phone || r.parentPhone || r.statusPhone || '').replace(/\D/g,''),
+          grade: r.grade || 'غير محدد'
+        });
+        map.set(keyOf(normalized), Object.assign({}, map.get(keyOf(normalized)) || {}, normalized));
+      });
+      const merged = Array.from(map.values()).filter(function(r){ return r && (r.name || r.phone); });
+      localStorage.setItem(KEY, JSON.stringify(merged));
+      await ref.set({
+        value: merged,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        safeMerge: true
+      }, { merge:true });
+      return;
+    }
     await firebaseDb.collection(FIREBASE_COLLECTION).doc(docId).set({
       value,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -3896,7 +3934,7 @@ document.addEventListener('click', function(e){
 <script>
 (function(){
   const FORM_STATE_KEY = 'masar_mobile_form_state';
-  const EXCLUDE_IDS = new Set(['adminPass','managePass']);
+  const EXCLUDE_IDS = new Set(['adminPass','managePass','studentName','grade','phone','notes','statusPhone','registerName','ctrlStudentName','ctrlStudentGrade','ctrlStudentPhone','ctrlStudentNotes','mctrlStudentName','mctrlStudentGrade','mctrlStudentPhone','mctrlStudentNotes']);
   function readFormState(){ try{ return JSON.parse(localStorage.getItem(FORM_STATE_KEY)||'{}'); }catch(e){ return {}; } }
   function writeFormState(v){
     localStorage.setItem(FORM_STATE_KEY, JSON.stringify(v));
@@ -4485,6 +4523,87 @@ document.addEventListener('click', function(e){
   function bind(prefix){var pane=el(prefix==='mctrl'?'mTabStudentResult':'tabStudentResult');if(!pane)return;var save=el(prefix+'SaveResultBtn');if(save&&save.dataset.stageLockFinal!=='1'){save.dataset.stageLockFinal='1';save.addEventListener('click',function(e){e.preventDefault();e.stopImmediatePropagation();saveAllowed(prefix);return false},true)}var select=el(prefix+'ResultStudentSelect');if(select&&select.dataset.stageLockFinal!=='1'){select.dataset.stageLockFinal='1';select.addEventListener('change',function(){setTimeout(function(){apply(prefix)},120)})}var load=el(prefix+'LoadResultBtn');if(load&&load.dataset.stageLockFinal!=='1'){load.dataset.stageLockFinal='1';load.addEventListener('click',function(){setTimeout(function(){apply(prefix)},120)})}}
   function run(){bind('ctrl');bind('mctrl');apply('ctrl');apply('mctrl')}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run);else run();setInterval(run,1200);window.applyStageResultLocks=run;
+})();
+</script>
+
+<script id="masar-records-safe-append-final">
+(function(){
+  if(window.__masarRecordsSafeAppendFinal) return; window.__masarRecordsSafeAppendFinal = true;
+  const COLLECTION = 'masar_aladad_site';
+  const RECORDS_DOC = 'records';
+  const LOCAL_KEY = 'masar_mobile_records';
+  function clean(v){ return String(v||'').replace(/\D/g,''); }
+  function norm(r){
+    r = r || {};
+    return Object.assign({}, r, {
+      name: r.name || r.studentName || r.registerName || '',
+      phone: clean(r.phone || r.parentPhone || r.statusPhone || ''),
+      grade: r.grade || 'غير محدد',
+      nomination: r.nomination || r.stageOne || 'قيد الترشيح',
+      sorting: r.sorting || r.stageTwo || 'بانتظار الفرز',
+      final: r.final || r.stageThree || 'بانتظار النهائي',
+      cancelled: !!r.cancelled
+    });
+  }
+  function key(r){ r=norm(r); return r.phone ? 'p:'+r.phone : 'n:'+String(r.name).trim()+'|'+String(r.grade).trim(); }
+  function readLocal(){ try{return JSON.parse(localStorage.getItem(LOCAL_KEY)||'[]')}catch(e){return []} }
+  function writeLocal(list){ localStorage.setItem(LOCAL_KEY, JSON.stringify(list||[])); }
+  async function readCloud(){
+    if(!window.firebaseReady || !window.firebaseDb) return readLocal();
+    try{
+      const snap = await window.firebaseDb.collection(COLLECTION).doc(RECORDS_DOC).get();
+      const data = snap.exists ? (snap.data()||{}) : {};
+      return Array.isArray(data.value) ? data.value.map(norm) : [];
+    }catch(e){ console.warn('تعذر قراءة records من Firebase', e); return readLocal(); }
+  }
+  function mergeLists(){
+    const map = new Map();
+    Array.from(arguments).forEach(list => (list||[]).forEach(r => { r=norm(r); if(r.name || r.phone) map.set(key(r), Object.assign({}, map.get(key(r))||{}, r)); }));
+    return Array.from(map.values());
+  }
+  async function saveMerged(list){
+    const cloud = await readCloud();
+    const merged = mergeLists(cloud, readLocal(), list);
+    writeLocal(merged);
+    if(window.firebaseReady && window.firebaseDb){
+      await window.firebaseDb.collection(COLLECTION).doc(RECORDS_DOC).set({
+        value: merged,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        safeMergeFinal: true
+      }, {merge:true});
+    }
+    try{ if(typeof renderTable==='function') renderTable(); }catch(e){}
+    try{ if(typeof renderAdminDataTables==='function') renderAdminDataTables(); }catch(e){}
+    try{ if(typeof refreshResultStudentControls==='function') refreshResultStudentControls(); }catch(e){}
+    return merged;
+  }
+  window.getRecords = function(){ return readLocal().map(norm); };
+  window.setRecords = function(v){ writeLocal(mergeLists(readLocal(), Array.isArray(v)?v:[])); saveMerged(Array.isArray(v)?v:[]); };
+  window.masarForceLoadRecords = async function(){ const cloud = await readCloud(); const merged = mergeLists(cloud); writeLocal(merged); return merged; };
+  function fullName(name){ return String(name||'').trim().split(/\s+/).filter(Boolean).length >= 4; }
+  function alertMsg(t,m){ if(typeof window.showFancyAlert==='function') window.showFancyAlert(t,m); else alert(m); }
+  async function registerFromMain(e){
+    const btn = e.target && e.target.closest && e.target.closest('#saveBtn');
+    if(!btn) return;
+    e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
+    const name = (document.getElementById('studentName')?.value || '').trim();
+    const grade = (document.getElementById('grade')?.value || '').trim();
+    const phone = clean(document.getElementById('phone')?.value || '');
+    const notes = (document.getElementById('notes')?.value || '').trim();
+    if(!fullName(name)){ alertMsg('تنبيه','يشترط إدخال الاسم الرباعي.'); return false; }
+    if(!grade){ alertMsg('تنبيه','اختاري الصف.'); return false; }
+    if(phone.length < 9){ alertMsg('تنبيه','أدخلي رقم ولي الأمر بشكل صحيح.'); return false; }
+    const rec = {name, grade, phone, notes, createdAt:new Date().toLocaleString('ar-SA'), updatedAt:new Date().toLocaleString('ar-SA'), nomination:'قيد الترشيح', sorting:'بانتظار الفرز', final:'بانتظار النهائي', cancelled:false};
+    await saveMerged([rec]);
+    ['studentName','grade','phone','notes'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+    alertMsg('تم بنجاح','تم تسجيل الطالب/ة وحفظه مع السجلات السابقة بدون حذف.');
+    if(typeof showPage==='function') showPage('contestantsPage');
+    return false;
+  }
+  document.addEventListener('click', registerFromMain, true);
+  async function initial(){ await window.masarForceLoadRecords(); try{ if(typeof renderTable==='function') renderTable(); }catch(e){} try{ if(typeof renderAdminDataTables==='function') renderAdminDataTables(); }catch(e){} }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', initial); else initial();
+  setTimeout(initial, 1500);
 })();
 </script>
 </body>
