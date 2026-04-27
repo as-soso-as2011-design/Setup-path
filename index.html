@@ -4624,7 +4624,7 @@ document.addEventListener('click', function(e){
     return merged;
   };
   function fullName(name){ return String(name||'').trim().split(/\s+/).filter(Boolean).length >= 4; }
-  function alertMsg(t,m){ if(typeof window.showFancyAlert==='function') window.showFancyAlert(t,m); else alert(m); }
+  function alertMsg(t,m,icon){ if(typeof window.openFancyAlert==='function') window.openFancyAlert(t,m,icon||'✓'); else if(typeof window.showFancyAlert==='function') window.showFancyAlert(t,m); else { const box=document.querySelector('#registerMsg')||document.querySelector('#mainMsg'); if(box){ box.textContent=m; box.classList.remove('hidden'); } } }
   async function registerFromMain(e){
     const btn = e.target && e.target.closest && e.target.closest('#saveBtn');
     if(!btn) return;
@@ -4639,7 +4639,7 @@ document.addEventListener('click', function(e){
     const rec = {name, grade, phone, notes, createdAt:new Date().toLocaleString('ar-SA'), updatedAt:new Date().toLocaleString('ar-SA'), nomination:'قيد الترشيح', sorting:'بانتظار الفرز', final:'بانتظار النهائي', cancelled:false, source:'masar_aladad_site/records'};
     await saveMerged([rec]);
     ['studentName','grade','phone','notes'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
-    alertMsg('تم بنجاح','تم تسجيل الطالب/ة وحفظه في records بدون حذف السابقين.');
+    alertMsg('تم حفظ البيانات بنجاح','تم حفظ البيانات بنجاح ✅','✓');
     if(typeof showPage==='function') showPage('contestantsPage');
     return false;
   }
