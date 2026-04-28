@@ -2222,6 +2222,7 @@ const FIREBASE_CONFIG = {
 };
 
 const FIREBASE_COLLECTION = 'masar_aladad_site';
+window.FIREBASE_COLLECTION = FIREBASE_COLLECTION;
 const CLOUD_DOCS = {
   records: 'records',
   users: 'users',
@@ -2398,6 +2399,7 @@ async function initFirebasePersistence(){
       firebase.initializeApp(FIREBASE_CONFIG);
     }
     firebaseDb = firebase.firestore();
+    window.firebaseDb = firebaseDb;
     try{ await firebaseDb.enablePersistence({synchronizeTabs:true}); }catch(e){ console.warn('Firebase offline persistence not enabled:', e && e.code ? e.code : e); }
     firebaseReady = true;
     try{ window.firebaseReady = true; window.firebaseDb = firebaseDb; }catch(_e){}
@@ -2457,9 +2459,32 @@ function renderHomeResult(text){
   const box=q('#homeResult');
   if(box) box.innerHTML=text;
 }
+function normalizeArabicNameForDuplicate(name){
+  return String(name || '')
+    .trim()
+    .replace(/[إأآا]/g,'ا')
+    .replace(/ى/g,'ي')
+    .replace(/ة/g,'ه')
+    .replace(/\s+/g,' ');
+}
+function getRecordIdentity(rec){
+  return (rec && (rec.id || rec.recordId)) ? String(rec.id || rec.recordId) : '';
+}
+function createRecordId(){
+  return 'rec_' + Date.now() + '_' + Math.random().toString(36).slice(2,10);
+}
 function findByPhone(phone){
   const p=cleanPhone(phone);
   return getRecords().find(r=>cleanPhone(r.phone)===p);
+}
+function findAllByPhone(phone){
+  const p=cleanPhone(phone);
+  return getRecords().filter(r=>cleanPhone(r.phone)===p);
+}
+function findByPhoneAndName(phone, name){
+  const p=cleanPhone(phone);
+  const n=normalizeArabicNameForDuplicate(name);
+  return getRecords().find(r=>cleanPhone(r.phone)===p && normalizeArabicNameForDuplicate(r.name)===n);
 }
 
 const REGISTRATION_END = new Date();
@@ -3843,8 +3868,20 @@ document.addEventListener('click', function(e){
       }
 
       var rows = getRecordsFallback();
-      var existing = rows.findIndex(function(r){ return cleanPhoneFallback(r.phone) === phone; });
+      var normalizedName = String(name || '').trim().replace(/[إأآا]/g,'ا').replace(/ى/g,'ي').replace(/ة/g,'ه').replace(/\s+/g,' ');
+      var duplicateSameStudent = rows.find(function(r){
+        return cleanPhoneFallback(r.phone) === phone &&
+               String(r.name || '').trim().replace(/[إأآا]/g,'ا').replace(/ى/g,'ي').replace(/ة/g,'ه').replace(/\s+/g,' ') === normalizedName &&
+               String(r.grade || '').trim() === grade;
+      });
+
+      if(duplicateSameStudent){
+        openFancyAlert('تنبيه','هذا الطالب/ة مسجل مسبقًا بنفس الاسم والصف ورقم ولي الأمر.','!');
+        return;
+      }
+
       var record = {
+        id:'rec_' + Date.now() + '_' + Math.random().toString(36).slice(2,10),
         name:name,
         grade:grade,
         phone:phone,
@@ -3856,11 +3893,7 @@ document.addEventListener('click', function(e){
         cancelled:false
       };
 
-      if(existing >= 0){
-        rows[existing] = Object.assign({}, rows[existing], record);
-      }else{
-        rows.push(record);
-      }
+      rows.push(record);
 
       setRecordsFallback(rows);
       renderContestantsFallback();
@@ -4650,6 +4683,115 @@ document.addEventListener('click', function(e){
   setTimeout(initial, 3500);
 })();
 </script>
+
+<script>
+(function(){
+  function qs(s){ return document.querySelector(s); }
+  function cleanPhoneSmart(v){ return String(v||'').replace(/\D/g,'').trim(); }
+  function normalizeNameSmart(name){
+    return String(name || '').trim()
+      .replace(/[إأآا]/g,'ا')
+      .replace(/ى/g,'ي')
+      .replace(/ة/g,'ه')
+      .replace(/\s+/g,' ');
+  }
+  function isFullNameSmart(name){
+    return String(name||'').trim().split(/\s+/).filter(Boolean).length >= 4;
+  }
+  function readRecordsSmart(){
+    try{ return JSON.parse(localStorage.getItem('masar_mobile_records')||'[]'); }catch(e){ return []; }
+  }
+  function writeRecordsSmart(rows){
+    localStorage.setItem('masar_mobile_records', JSON.stringify(rows));
+    if(window.firebaseDb && window.firebase && window.FIREBASE_COLLECTION){
+      try{
+        window.firebaseDb.collection(window.FIREBASE_COLLECTION).doc('records').set({
+          value: rows,
+          updatedAt: window.firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge:true });
+      }catch(e){}
+    }
+  }
+  function fancy(title,text,icon){
+    if(typeof window.openFancyAlert === 'function') window.openFancyAlert(title,text,icon || '!');
+    else alert(text);
+  }
+  function showContestants(){
+    if(typeof window.renderContestantsTable === 'function') window.renderContestantsTable();
+    if(typeof window.renderTable === 'function') window.renderTable();
+    if(typeof window.showPage === 'function') window.showPage('contestantsPage');
+  }
+
+  function siblingRegisterHandler(e){
+    e.preventDefault();
+    e.stopPropagation();
+    if(e.stopImmediatePropagation) e.stopImmediatePropagation();
+
+    var name = (qs('#studentName')?.value || '').trim();
+    var grade = (qs('#grade')?.value || '').trim();
+    var phone = cleanPhoneSmart(qs('#phone')?.value || '');
+    var notes = (qs('#notes')?.value || '').trim();
+
+    if(!isFullNameSmart(name)){ fancy('تنبيه','يشترط إدخال الاسم الرباعي.','!'); return false; }
+    if(!grade){ fancy('تنبيه','اختاري الصف.','!'); return false; }
+    if(phone.length < 9){ fancy('تنبيه','أدخلي رقم ولي الأمر بشكل صحيح.','!'); return false; }
+
+    var rows = readRecordsSmart();
+    var duplicate = rows.find(function(r){
+      return cleanPhoneSmart(r.phone) === phone &&
+             normalizeNameSmart(r.name) === normalizeNameSmart(name) &&
+             String(r.grade || '').trim() === grade;
+    });
+
+    if(duplicate){
+      fancy('تنبيه','هذا الطالب/ة مسجل مسبقًا بنفس الاسم والصف ورقم ولي الأمر.','!');
+      return false;
+    }
+
+    rows.push({
+      id:'rec_' + Date.now() + '_' + Math.random().toString(36).slice(2,10),
+      name:name,
+      grade:grade,
+      phone:phone,
+      notes:notes,
+      createdAt:new Date().toLocaleString('ar-SA'),
+      updatedAt:new Date().toLocaleString('ar-SA'),
+      nomination:'قيد الترشيح',
+      sorting:'بانتظار الفرز',
+      final:'بانتظار النهائي',
+      stageOne:'قيد الترشيح',
+      stageTwo:'بانتظار الفرز',
+      stageThree:'بانتظار النهائي',
+      cancelled:false,
+      cancelReason:''
+    });
+
+    writeRecordsSmart(rows);
+    fancy('تم بنجاح','تم تسجيل الطالب/ة بنجاح، ويمكن تسجيل الإخوة والأخوات بنفس رقم ولي الأمر.','✓');
+    ['studentName','grade','phone','notes'].forEach(function(id){
+      var el = qs('#'+id);
+      if(el) el.value = '';
+    });
+    setTimeout(showContestants, 450);
+    return false;
+  }
+
+  function installSiblingRegisterFix(){
+    var btn = qs('#saveBtn');
+    if(!btn) return;
+    var clone = btn.cloneNode(true);
+    btn.parentNode.replaceChild(clone, btn);
+    clone.addEventListener('click', siblingRegisterHandler, true);
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', installSiblingRegisterFix);
+  }else{
+    installSiblingRegisterFix();
+  }
+})();
+</script>
+
 </body>
 </html>
 <script id="masar-real-language-fallback">
