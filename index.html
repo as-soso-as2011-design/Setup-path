@@ -1205,6 +1205,30 @@ html[dir="ltr"] .app{direction:ltr}
 html[dir="ltr"] .title,html[dir="ltr"] .subtitle{text-align:center}
 html[dir="ltr"] th,html[dir="ltr"] td{text-align:center}
 
+
+
+/* ===== VIP registration + edit pages ===== */
+.vipRegisterShell{position:relative;overflow:hidden;border-radius:30px;background:linear-gradient(180deg,#fffdfa,#fff7ed);border:1px solid rgba(201,161,95,.22);box-shadow:0 22px 46px rgba(39,70,83,.12)}
+.vipRegisterShell:before{content:"";position:absolute;inset:-90px auto auto -90px;width:210px;height:210px;border-radius:50%;background:rgba(201,161,95,.14);pointer-events:none}
+.vipRegisterShell:after{content:"";position:absolute;right:-70px;bottom:-90px;width:220px;height:220px;border-radius:50%;background:rgba(86,126,134,.10);pointer-events:none}
+.vipRegisterContent{position:relative;z-index:1}
+.vipPageHeader{margin:0 0 14px;padding:14px 14px;border-radius:24px;background:linear-gradient(135deg,rgba(39,70,83,.96),rgba(86,126,134,.92),rgba(201,161,95,.88));color:#fff;box-shadow:0 14px 28px rgba(39,70,83,.16);text-align:center;overflow:hidden;position:relative}
+.vipPageHeader:after{content:"";position:absolute;top:0;left:-120%;width:46%;height:100%;background:rgba(255,255,255,.18);transform:skewX(-24deg);animation:vipSweep 4.8s infinite;pointer-events:none}
+.vipPageKicker{font-size:12px;font-weight:1000;color:#ffe8b8;margin-bottom:5px}
+.vipPageTitle{font-size:23px;font-weight:1000;line-height:1.6;margin:0}
+.vipPageSub{font-size:12px;font-weight:800;line-height:1.9;color:rgba(255,255,255,.92);margin:5px 0 0}
+.vipFields{display:grid;gap:12px}
+.vipField{background:rgba(255,255,255,.72);border:1px solid rgba(0,0,0,.06);border-radius:22px;padding:10px 11px;box-shadow:inset 0 1px 0 rgba(255,255,255,.75)}
+.vipField label{display:flex;align-items:center;gap:7px;color:#274653;margin-bottom:8px;font-size:13px;font-weight:1000}
+.vipField .input{border-radius:17px;background:#fff;border-color:rgba(39,70,83,.11)}
+.vipActionRow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.vipActionRow .serviceBtn{border-radius:18px;padding:15px 12px}
+.vipEditLauncher{margin-top:14px;padding:12px;border-radius:22px;background:linear-gradient(135deg,rgba(39,70,83,.08),rgba(201,161,95,.16));border:1px solid rgba(201,161,95,.22);text-align:center}
+.vipEditLauncher .serviceBtn{border-radius:18px;box-shadow:0 12px 24px rgba(39,70,83,.14)}
+.vipEditLauncherTitle{color:#274653;font-weight:1000;font-size:14px;margin:0 0 9px}
+.vipEditCard{border-radius:30px;background:linear-gradient(180deg,#fffdfa,#fff7ed);border:1px solid rgba(201,161,95,.22);box-shadow:0 22px 46px rgba(39,70,83,.12)}
+.vipInfoNote{padding:12px 14px;border-radius:18px;background:linear-gradient(135deg,rgba(86,126,134,.09),rgba(201,161,95,.14));border:1px solid rgba(201,161,95,.20);color:#274653;font-weight:900;line-height:1.9;text-align:center}
+@media(max-width:520px){.vipPageTitle{font-size:21px}.vipActionRow{grid-template-columns:1fr 1fr;gap:9px}.vipRegisterShell{border-radius:26px}.vipField{border-radius:19px}}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
@@ -1341,42 +1365,131 @@ html[dir="ltr"] th,html[dir="ltr"] td{text-align:center}
       <div class="sectionTitle" style="margin:0">نموذج تسجيل طالب/ة في المسابقة</div>
       <button class="backBtn" data-back="homePage">رجوع</button>
     </div>
-    <div class="card" id="registerFormCard">
-      <div id="registerLockNotice" class="lockNotice">لا يمكن التسجيل في هذي الفتره الحاليه تم الانتهاء</div>
-      <div class="field">
-        <label for="studentName">اسم الطالب/ة</label>
-        <input id="studentName" class="input registerLockField" placeholder="يشترط إدخال الاسم الرباعي">
+    <div class="card vipRegisterShell" id="registerFormCard">
+      <div class="vipRegisterContent">
+        <div class="vipPageHeader">
+          <div class="vipPageKicker">مسار الأعداد</div>
+          <h2 class="vipPageTitle">بوابة تسجيل المتسابقين</h2>
+          <p class="vipPageSub">واجهة مرتبة لتسجيل الطالب/ة وحفظ البيانات بأمان داخل سجلات المسابقة.</p>
+        </div>
+        <div id="registerLockNotice" class="lockNotice">لا يمكن التسجيل في هذي الفتره الحاليه تم الانتهاء</div>
+        <div class="vipFields">
+          <div class="field vipField">
+            <label for="studentName">👤 اسم الطالب/ة</label>
+            <input id="studentName" class="input registerLockField" placeholder="يشترط إدخال الاسم الرباعي">
+          </div>
+          <div class="field vipField">
+            <label for="grade">🎓 الصف</label>
+            <select id="grade" class="input registerLockField">
+              <option value="">اختاري الصف</option>
+              <option>الأول الابتدائي</option>
+              <option>الثاني الابتدائي</option>
+              <option>الثالث الابتدائي</option>
+              <option>الرابع الابتدائي</option>
+              <option>الخامس الابتدائي</option>
+              <option>السادس الابتدائي</option>
+              <option>الأول المتوسط</option>
+              <option>الثاني المتوسط</option>
+              <option>الثالث المتوسط</option>
+              <option>الأول الثانوي</option>
+              <option>الثاني الثانوي</option>
+              <option>الثالث الثانوي</option>
+            </select>
+          </div>
+          <div class="field vipField">
+            <label for="phoneCode">☎️ مفتاح الخط</label>
+            <select id="phoneCode" class="input registerLockField">
+              <option value="966">🇸🇦 السعودية +966</option>
+              <option value="971">🇦🇪 الإمارات +971</option>
+              <option value="965">🇰🇼 الكويت +965</option>
+              <option value="973">🇧🇭 البحرين +973</option>
+              <option value="974">🇶🇦 قطر +974</option>
+              <option value="968">🇴🇲 عمان +968</option>
+              <option value="967">🇾🇪 اليمن +967</option>
+              <option value="20">🇪🇬 مصر +20</option>
+              <option value="962">🇯🇴 الأردن +962</option>
+              <option value="961">🇱🇧 لبنان +961</option>
+            </select>
+          </div>
+          <div class="field vipField">
+            <label for="phone">📱 رقم ولي الأمر</label>
+            <input id="phone" class="input registerLockField" inputmode="numeric" placeholder="يشترط عدم التغيير للتواصل الرسمي">
+          </div>
+          <div class="field vipField">
+            <label for="notes">📝 ملاحظات</label>
+            <input id="notes" class="input registerLockField" placeholder="أي ملاحظات إضافية">
+          </div>
+        </div>
+        <div class="vipActionRow">
+          <button class="serviceBtn softBtn registerLockField" id="clearRegisterBtn" type="button">مسح البيانات</button>
+          <button class="serviceBtn goldBtn registerLockField" id="saveBtn" type="button">تسجيل</button>
+        </div>
+        <div class="vipEditLauncher">
+          <div class="vipEditLauncherTitle">هل تحتاجين تعديل تسجيل سابق؟</div>
+          <button class="serviceBtn darkBtn" id="openEditContestantPageBtn" type="button">تعديل بيانات المتسابق/ة</button>
+        </div>
       </div>
-      <div class="field">
-        <label for="grade">الصف</label>
-        <select id="grade" class="input registerLockField">
+    </div>
+  </section>
+
+
+  <section id="editContestantPage" class="page">
+    <div class="pageHeader">
+      <div class="sectionTitle" style="margin:0">تعديل بيانات المتسابق/ة</div>
+      <button class="backBtn" data-back="registerPage">رجوع</button>
+    </div>
+    <div class="card vipEditCard">
+      <div class="vipPageHeader">
+        <div class="vipPageKicker">تحديث آمن</div>
+        <h2 class="vipPageTitle">تعديل بيانات المتسابق/ة</h2>
+        <p class="vipPageSub">أدخلي رقم ولي الأمر المسجل لتحميل بيانات المتسابق/ة ثم حفظ التعديل.</p>
+      </div>
+      <div class="field vipField">
+        <label for="editSearchPhone">📱 رقم ولي الأمر المسجل</label>
+        <input id="editSearchPhone" class="input" inputmode="numeric" placeholder="05xxxxxxxx">
+      </div>
+      <button class="serviceBtn darkBtn" id="editLoadBtn" type="button" style="margin-top:12px">تحميل بيانات المتسابق/ة</button>
+      <div id="editMsg" class="vipInfoNote" style="margin-top:14px">ستظهر البيانات هنا بعد التحميل.</div>
+    </div>
+    <div class="card vipEditCard hidden" id="editFormCard">
+      <div class="field vipField">
+        <label for="editStudentName">👤 اسم الطالب/ة</label>
+        <input id="editStudentName" class="input" placeholder="الاسم الرباعي">
+      </div>
+      <div class="field vipField">
+        <label for="editGrade">🎓 الصف</label>
+        <select id="editGrade" class="input">
           <option value="">اختاري الصف</option>
-          <option>الأول الابتدائي</option>
-          <option>الثاني الابتدائي</option>
-          <option>الثالث الابتدائي</option>
-          <option>الرابع الابتدائي</option>
-          <option>الخامس الابتدائي</option>
-          <option>السادس الابتدائي</option>
-          <option>الأول المتوسط</option>
-          <option>الثاني المتوسط</option>
-          <option>الثالث المتوسط</option>
-          <option>الأول الثانوي</option>
-          <option>الثاني الثانوي</option>
-          <option>الثالث الثانوي</option>
+          <option>الأول الابتدائي</option><option>الثاني الابتدائي</option><option>الثالث الابتدائي</option>
+          <option>الرابع الابتدائي</option><option>الخامس الابتدائي</option><option>السادس الابتدائي</option>
+          <option>الأول المتوسط</option><option>الثاني المتوسط</option><option>الثالث المتوسط</option>
+          <option>الأول الثانوي</option><option>الثاني الثانوي</option><option>الثالث الثانوي</option>
         </select>
       </div>
-      <div class="field">
-        <label for="phone">رقم ولي الأمر</label>
-        <input id="phone" class="input registerLockField" inputmode="numeric" placeholder="يشترط عدم التغيير للتواصل الرسمي">
+      <div class="field vipField">
+        <label for="editPhoneCode">☎️ مفتاح الخط</label>
+        <select id="editPhoneCode" class="input">
+          <option value="966">🇸🇦 السعودية +966</option>
+          <option value="971">🇦🇪 الإمارات +971</option>
+          <option value="965">🇰🇼 الكويت +965</option>
+          <option value="973">🇧🇭 البحرين +973</option>
+          <option value="974">🇶🇦 قطر +974</option>
+          <option value="968">🇴🇲 عمان +968</option>
+          <option value="967">🇾🇪 اليمن +967</option>
+          <option value="20">🇪🇬 مصر +20</option>
+          <option value="962">🇯🇴 الأردن +962</option>
+          <option value="961">🇱🇧 لبنان +961</option>
+        </select>
       </div>
-      <div class="field">
-        <label for="notes">ملاحظات</label>
-        <input id="notes" class="input registerLockField" placeholder="أي ملاحظات إضافية">
+      <div class="field vipField">
+        <label for="editPhone">📱 رقم ولي الأمر</label>
+        <input id="editPhone" class="input" inputmode="numeric" placeholder="05xxxxxxxx">
       </div>
-      <div class="formActions">
-        <button class="serviceBtn softBtn registerLockField" id="clearRegisterBtn" type="button">مسح البيانات</button>
-        <button class="serviceBtn goldBtn registerLockField" id="saveBtn" type="button">تسجيل</button>
+      <div class="field vipField">
+        <label for="editNotes">📝 ملاحظات</label>
+        <input id="editNotes" class="input" placeholder="أي ملاحظات إضافية">
       </div>
+      <button class="saveBtn" id="editSaveBtn" type="button">حفظ التعديل</button>
     </div>
   </section>
 
@@ -2222,7 +2335,6 @@ const FIREBASE_CONFIG = {
 };
 
 const FIREBASE_COLLECTION = 'masar_aladad_site';
-window.FIREBASE_COLLECTION = FIREBASE_COLLECTION;
 const CLOUD_DOCS = {
   records: 'records',
   users: 'users',
@@ -2399,7 +2511,6 @@ async function initFirebasePersistence(){
       firebase.initializeApp(FIREBASE_CONFIG);
     }
     firebaseDb = firebase.firestore();
-    window.firebaseDb = firebaseDb;
     try{ await firebaseDb.enablePersistence({synchronizeTabs:true}); }catch(e){ console.warn('Firebase offline persistence not enabled:', e && e.code ? e.code : e); }
     firebaseReady = true;
     try{ window.firebaseReady = true; window.firebaseDb = firebaseDb; }catch(_e){}
@@ -2459,32 +2570,9 @@ function renderHomeResult(text){
   const box=q('#homeResult');
   if(box) box.innerHTML=text;
 }
-function normalizeArabicNameForDuplicate(name){
-  return String(name || '')
-    .trim()
-    .replace(/[إأآا]/g,'ا')
-    .replace(/ى/g,'ي')
-    .replace(/ة/g,'ه')
-    .replace(/\s+/g,' ');
-}
-function getRecordIdentity(rec){
-  return (rec && (rec.id || rec.recordId)) ? String(rec.id || rec.recordId) : '';
-}
-function createRecordId(){
-  return 'rec_' + Date.now() + '_' + Math.random().toString(36).slice(2,10);
-}
 function findByPhone(phone){
   const p=cleanPhone(phone);
   return getRecords().find(r=>cleanPhone(r.phone)===p);
-}
-function findAllByPhone(phone){
-  const p=cleanPhone(phone);
-  return getRecords().filter(r=>cleanPhone(r.phone)===p);
-}
-function findByPhoneAndName(phone, name){
-  const p=cleanPhone(phone);
-  const n=normalizeArabicNameForDuplicate(name);
-  return getRecords().find(r=>cleanPhone(r.phone)===p && normalizeArabicNameForDuplicate(r.name)===n);
 }
 
 const REGISTRATION_END = new Date();
@@ -3868,20 +3956,8 @@ document.addEventListener('click', function(e){
       }
 
       var rows = getRecordsFallback();
-      var normalizedName = String(name || '').trim().replace(/[إأآا]/g,'ا').replace(/ى/g,'ي').replace(/ة/g,'ه').replace(/\s+/g,' ');
-      var duplicateSameStudent = rows.find(function(r){
-        return cleanPhoneFallback(r.phone) === phone &&
-               String(r.name || '').trim().replace(/[إأآا]/g,'ا').replace(/ى/g,'ي').replace(/ة/g,'ه').replace(/\s+/g,' ') === normalizedName &&
-               String(r.grade || '').trim() === grade;
-      });
-
-      if(duplicateSameStudent){
-        openFancyAlert('تنبيه','هذا الطالب/ة مسجل مسبقًا بنفس الاسم والصف ورقم ولي الأمر.','!');
-        return;
-      }
-
+      var existing = rows.findIndex(function(r){ return cleanPhoneFallback(r.phone) === phone; });
       var record = {
-        id:'rec_' + Date.now() + '_' + Math.random().toString(36).slice(2,10),
         name:name,
         grade:grade,
         phone:phone,
@@ -3893,7 +3969,11 @@ document.addEventListener('click', function(e){
         cancelled:false
       };
 
-      rows.push(record);
+      if(existing >= 0){
+        rows[existing] = Object.assign({}, rows[existing], record);
+      }else{
+        rows.push(record);
+      }
 
       setRecordsFallback(rows);
       renderContestantsFallback();
@@ -4669,11 +4749,11 @@ document.addEventListener('click', function(e){
     if(!fullName(name)){ alertMsg('تنبيه','يشترط إدخال الاسم الرباعي.'); return false; }
     if(!grade){ alertMsg('تنبيه','اختاري الصف.'); return false; }
     if(phone.length < 9){ alertMsg('تنبيه','أدخلي رقم ولي الأمر بشكل صحيح.'); return false; }
-    const rec = {name, grade, phone, notes, createdAt:new Date().toLocaleString('ar-SA'), updatedAt:new Date().toLocaleString('ar-SA'), nomination:'قيد الترشيح', sorting:'بانتظار الفرز', final:'بانتظار النهائي', cancelled:false, source:'masar_aladad_site/records'};
+    const phoneCode = (document.getElementById('phoneCode')?.value || '966');
+    const rec = {name, grade, phone, phoneCode, notes, createdAt:new Date().toLocaleString('ar-SA'), updatedAt:new Date().toLocaleString('ar-SA'), nomination:'قيد الترشيح', sorting:'بانتظار الفرز', final:'بانتظار النهائي', cancelled:false, source:'masar_aladad_site/records'};
     await saveMerged([rec]);
     ['studentName','grade','phone','notes'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
-    alertMsg('تم بنجاح','تم تسجيل الطالب/ة وحفظه في records بدون حذف السابقين.');
-    if(typeof showPage==='function') showPage('contestantsPage');
+    alertMsg('تم حفظ البيانات بنجاح ✅','تم حفظ بيانات المتسابق/ة بنجاح.');
     return false;
   }
   document.addEventListener('click', registerFromMain, true);
@@ -4684,111 +4764,374 @@ document.addEventListener('click', function(e){
 })();
 </script>
 
-<script>
+<script id="masar-edit-contestant-page-final">
 (function(){
-  function qs(s){ return document.querySelector(s); }
-  function cleanPhoneSmart(v){ return String(v||'').replace(/\D/g,'').trim(); }
-  function normalizeNameSmart(name){
-    return String(name || '').trim()
-      .replace(/[إأآا]/g,'ا')
-      .replace(/ى/g,'ي')
-      .replace(/ة/g,'ه')
-      .replace(/\s+/g,' ');
+  if(window.__masarEditContestantPageFinal) return; window.__masarEditContestantPageFinal = true;
+  function q(s){return document.querySelector(s)}
+  function clean(v){return String(v||'').replace(/\D/g,'')}
+  function last9(v){v=clean(v); return v.length>9 ? v.slice(-9) : v}
+  function esc(v){return String(v||'').replace(/[&<>"']/g,function(s){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]})}
+  function msg(title,text){
+    if(typeof window.showFancyAlert==='function') window.showFancyAlert(title,text);
+    else if(typeof window.openFancyAlert==='function') window.openFancyAlert(title,text,'✓');
+    else alert((title||'')+'\n'+(text||''));
   }
-  function isFullNameSmart(name){
-    return String(name||'').trim().split(/\s+/).filter(Boolean).length >= 4;
+  // ضمان توفر بطاقة التنبيه الفخمة للاستخدام العام
+  window.showFancyAlert = window.showFancyAlert || function(title,text){
+    var overlay=q('#fancyAlertOverlay'), titleEl=q('#fancyAlertTitle'), textEl=q('#fancyAlertText'), iconEl=q('#fancyAlertIcon');
+    if(titleEl) titleEl.textContent=title||'تنبيه';
+    if(textEl) textEl.textContent=text||'';
+    if(iconEl) iconEl.textContent='✓';
+    if(overlay) overlay.classList.add('active');
+  };
+  async function loadAll(){
+    try{ if(typeof window.masarForceLoadRecords==='function') await window.masarForceLoadRecords(); }catch(e){}
+    try{ return (typeof window.getRecords==='function'?window.getRecords():JSON.parse(localStorage.getItem('masar_mobile_records')||'[]')) || []; }catch(e){ return []; }
   }
-  function readRecordsSmart(){
-    try{ return JSON.parse(localStorage.getItem('masar_mobile_records')||'[]'); }catch(e){ return []; }
+  function findRecord(list, phone){
+    var p=clean(phone), p9=last9(phone);
+    return (list||[]).find(function(r){
+      var rp=clean(r.phone||r.parentPhone||r.statusPhone||''), rp9=last9(rp);
+      return (p && rp && p===rp) || (p9 && rp9 && p9===rp9);
+    });
   }
-  function writeRecordsSmart(rows){
-    localStorage.setItem('masar_mobile_records', JSON.stringify(rows));
-    if(window.firebaseDb && window.firebase && window.FIREBASE_COLLECTION){
-      try{
-        window.firebaseDb.collection(window.FIREBASE_COLLECTION).doc('records').set({
-          value: rows,
-          updatedAt: window.firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge:true });
-      }catch(e){}
+  function keyOf(r){return (clean(r&&r.phone)||'')+'|'+String((r&&r.name)||'').trim()+'|'+String((r&&r.grade)||'').trim()}
+  async function writeFullList(list){
+    localStorage.setItem('masar_mobile_records', JSON.stringify(list||[]));
+    try{
+      if(typeof firebaseReady !== 'undefined' && firebaseReady && typeof firebaseDb !== 'undefined' && firebaseDb){
+        await firebaseDb.collection('masar_aladad_site').doc('records').set({
+          value:list||[],
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          sourceSite:'masar_aladad_site',
+          editPageFix:true
+        }, {merge:true});
+      }else if(typeof window.setRecords==='function'){
+        window.setRecords(list||[]);
+      }
+    }catch(e){
+      console.error('تعذر حفظ التعديل في Firebase', e);
+      if(typeof window.setRecords==='function') window.setRecords(list||[]);
+    }
+    try{ if(typeof renderTable==='function') renderTable(); }catch(e){}
+    try{ if(typeof renderContestantsTable==='function') renderContestantsTable(); }catch(e){}
+    try{ if(typeof renderAdminDataTables==='function') renderAdminDataTables(); }catch(e){}
+  }
+  function openEditPage(){
+    var phone=q('#phone') ? q('#phone').value : '';
+    if(q('#editSearchPhone')) q('#editSearchPhone').value=phone;
+    if(typeof window.showPage==='function') window.showPage('editContestantPage');
+    else {
+      document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active')});
+      q('#editContestantPage')?.classList.add('active');
+    }
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+  window.openEditContestantPage = openEditPage;
+  async function loadEdit(){
+    var phone=q('#editSearchPhone')?.value||'';
+    if(!clean(phone)){ msg('تنبيه','أدخلي رقم ولي الأمر المسجل أولًا.'); return; }
+    var list=await loadAll();
+    var rec=findRecord(list, phone);
+    if(!rec){
+      q('#editFormCard')?.classList.add('hidden');
+      if(q('#editMsg')) q('#editMsg').innerHTML='لا يوجد متسابق/ة بهذا الرقم.';
+      return;
+    }
+    window.__masarEditingKey=keyOf(rec);
+    if(q('#editStudentName')) q('#editStudentName').value=rec.name||rec.studentName||rec.registerName||'';
+    if(q('#editGrade')) q('#editGrade').value=rec.grade||'';
+    if(q('#editPhoneCode')) q('#editPhoneCode').value=rec.phoneCode||'966';
+    if(q('#editPhone')) q('#editPhone').value=rec.phone||rec.parentPhone||rec.statusPhone||'';
+    if(q('#editNotes')) q('#editNotes').value=rec.notes||'';
+    q('#editFormCard')?.classList.remove('hidden');
+    if(q('#editMsg')) q('#editMsg').innerHTML='تم تحميل بيانات: <strong>'+esc(rec.name||'')+'</strong>';
+  }
+  async function saveEdit(){
+    var original=window.__masarEditingKey;
+    if(!original){ msg('تنبيه','حمّلي بيانات المتسابق/ة أولًا.'); return; }
+    var name=(q('#editStudentName')?.value||'').trim();
+    var grade=(q('#editGrade')?.value||'').trim();
+    var phone=clean(q('#editPhone')?.value||'');
+    var notes=(q('#editNotes')?.value||'').trim();
+    var phoneCode=q('#editPhoneCode')?.value||'966';
+    if(name.split(/\s+/).filter(Boolean).length < 4){ msg('تنبيه','يشترط إدخال الاسم الرباعي.'); return; }
+    if(!grade){ msg('تنبيه','اختاري الصف.'); return; }
+    if(phone.length < 9){ msg('تنبيه','أدخلي رقم ولي الأمر بشكل صحيح.'); return; }
+    var list=await loadAll();
+    var idx=list.findIndex(function(r){return keyOf(r)===original});
+    if(idx<0){
+      var found=findRecord(list, q('#editSearchPhone')?.value||phone);
+      idx=list.findIndex(function(r){return keyOf(r)===keyOf(found)});
+    }
+    if(idx<0){ msg('تنبيه','تعذر العثور على السجل المراد تعديله.'); return; }
+    var old=list[idx]||{};
+    var updated=Object.assign({}, old, {name:name, grade:grade, phone:phone, phoneCode:phoneCode, notes:notes, updatedAt:new Date().toLocaleString('ar-SA')});
+    list.splice(idx,1);
+    // إزالة نسخة مكررة بنفس الرقم الجديد إن وجدت ثم إضافة السجل المحدث
+    var p9=last9(phone);
+    list=list.filter(function(r){return last9(r.phone)!==p9});
+    list.push(updated);
+    await writeFullList(list);
+    window.__masarEditingKey=keyOf(updated);
+    if(q('#editSearchPhone')) q('#editSearchPhone').value=phone;
+    msg('تم حفظ البيانات بنجاح ✅','تم تعديل بيانات المتسابق/ة بنجاح.');
+  }
+  function bind(){
+    var open=q('#openEditContestantPageBtn');
+    if(open && open.dataset.boundEdit!=='1'){open.dataset.boundEdit='1'; open.addEventListener('click', openEditPage)}
+    var load=q('#editLoadBtn');
+    if(load && load.dataset.boundEdit!=='1'){load.dataset.boundEdit='1'; load.addEventListener('click', loadEdit)}
+    var save=q('#editSaveBtn');
+    if(save && save.dataset.boundEdit!=='1'){save.dataset.boundEdit='1'; save.addEventListener('click', saveEdit)}
+    // رجوع الصفحة المستقلة مضمونة
+    document.querySelectorAll('#editContestantPage .backBtn').forEach(function(btn){
+      if(btn.dataset.boundEditBack==='1') return; btn.dataset.boundEditBack='1';
+      btn.addEventListener('click', function(){ if(typeof window.showPage==='function') window.showPage(btn.dataset.back||'registerPage'); });
+    });
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', bind); else bind();
+  window.addEventListener('load', bind);
+})();
+</script>
+
+
+
+<style id="vip-accounts-privacy-patch-style">
+.vipAccountsGrid{display:grid;gap:14px;margin-top:12px}
+.vipAccountsCard{border:1px solid rgba(0,0,0,.07);border-radius:22px;background:linear-gradient(180deg,#fff,#fbfaf8);padding:14px;box-shadow:0 10px 22px rgba(39,70,83,.06)}
+.vipAccountsHead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.vipAccountsHead h3{margin:0;color:#274653;font-size:18px;font-weight:1000}
+.vipActionRow{display:flex;gap:7px;justify-content:center;flex-wrap:wrap}
+.vipMiniBtn{border:0;border-radius:12px;padding:8px 10px;font-size:12px;font-weight:1000;cursor:pointer;white-space:nowrap}
+.vipMiniBtn.edit{background:linear-gradient(135deg,#274653,#567e86);color:#fff}
+.vipMiniBtn.delete{background:linear-gradient(135deg,#fef2f2,#fee2e2);color:#991b1b}
+.vipMiniBtn.soft{background:linear-gradient(135deg,#f7eee4,#edd6bc);color:#6a5451}
+.vipPrivacyNotice{margin:10px 0 0;padding:10px 12px;border-radius:14px;background:#f8fafc;color:#475569;font-size:12px;font-weight:900;line-height:1.8;text-align:center;border:1px solid rgba(148,163,184,.35)}
+.vipInlineEditor{display:none;margin:10px 0 14px;padding:12px;border-radius:18px;background:linear-gradient(135deg,rgba(86,126,134,.10),rgba(201,161,95,.13));border:1px solid rgba(201,161,95,.22)}
+.vipInlineEditor.active{display:block}
+.vipInlineEditor .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:520px){.vipInlineEditor .row{grid-template-columns:1fr}.vipMiniBtn{font-size:11px;padding:8px 9px}}
+</style>
+
+<script id="vip-accounts-privacy-patch">
+(function(){
+  if(window.__vipAccountsPrivacyPatch) return; window.__vipAccountsPrivacyPatch = true;
+
+  function el(id){ return document.getElementById(id); }
+  function all(sel, root){ return Array.from((root||document).querySelectorAll(sel)); }
+  function esc(v){ return String(v==null?'':v).replace(/[&<>"']/g,function(s){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s];}); }
+  function clean(v){ return String(v||'').replace(/\D/g,'').trim(); }
+  function read(k,f){ try{ var raw=localStorage.getItem(k); return raw ? JSON.parse(raw) : f; }catch(e){ return f; } }
+  function write(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+  function records(){ try{ return typeof getRecords==='function' ? (getRecords()||[]) : read('masar_mobile_records',[]); }catch(e){ return read('masar_mobile_records',[]); } }
+  function saveRecordsSafe(v){
+    if(!Array.isArray(v)) return;
+    if(typeof setRecords==='function') setRecords(v);
+    else write('masar_mobile_records', v);
+    setTimeout(refreshAllVip, 120);
+  }
+  function users(){ try{ return typeof getUsers==='function' ? (getUsers()||[]) : read('masar_mobile_users',[]); }catch(e){ return read('masar_mobile_users',[]); } }
+  function saveUsersSafe(v){
+    if(!Array.isArray(v)) return;
+    if(typeof setUsers==='function') setUsers(v);
+    else write('masar_mobile_users', v);
+    setTimeout(renderVipAccountsPane, 80);
+  }
+  function deletedRecords(){
+    var key = (typeof DELETED_RECORDS_KEY !== 'undefined') ? DELETED_RECORDS_KEY : 'masar_mobile_deleted_records';
+    return read(key, []);
+  }
+  function saveDeleted(v){
+    var key = (typeof DELETED_RECORDS_KEY !== 'undefined') ? DELETED_RECORDS_KEY : 'masar_mobile_deleted_records';
+    write(key, v);
+    if(typeof syncCloudDoc==='function' && typeof CLOUD_DOCS!=='undefined') syncCloudDoc(CLOUD_DOCS.deletedRecords, v);
+  }
+  function toast(title, text, icon){
+    var overlay=el('fancyAlertOverlay'), titleEl=el('fancyAlertTitle'), textEl=el('fancyAlertText'), iconEl=el('fancyAlertIcon');
+    if(titleEl) titleEl.textContent = title || 'تم';
+    if(textEl) textEl.textContent = text || '';
+    if(iconEl) iconEl.textContent = icon || '✓';
+    if(overlay) overlay.classList.add('active');
+  }
+
+  var sensitiveIds = [
+    'studentName','phone','notes','statusPhone','registerName','adminUser','adminPass','manageUser','managePass',
+    'ctrlStudentName','ctrlStudentPhone','ctrlStudentNotes','mctrlStudentName','mctrlStudentPhone','mctrlStudentNotes',
+    'mctrlCancelPhone','mctrlCancelReason','ctrlCancelPhone','ctrlCancelReason','mctrlSearchInput','ctrlSearchInput',
+    'mctrlResultPhone','mctrlResultName','mctrlResultNote','ctrlResultPhone','ctrlResultName','ctrlResultNote',
+    'editStudentName','editPhone','editNotes','editPhoneCode','editGrade'
+  ];
+  function clearSensitiveVisible(){
+    sensitiveIds.forEach(function(id){ var x=el(id); if(x){ if(x.tagName==='SELECT') x.selectedIndex=0; else x.value=''; }});
+  }
+  function clearRegisterFields(){ ['studentName','phone','notes'].forEach(function(id){ var x=el(id); if(x) x.value=''; }); }
+  function clearLoginFields(){ ['adminUser','adminPass','manageUser','managePass'].forEach(function(id){ var x=el(id); if(x) x.value=''; }); }
+  function privacyAutocomplete(){
+    sensitiveIds.forEach(function(id){ var x=el(id); if(x){ x.setAttribute('autocomplete','off'); x.setAttribute('autocorrect','off'); x.setAttribute('spellcheck','false'); }});
+    ['adminPass','managePass'].forEach(function(id){ var x=el(id); if(x){ x.setAttribute('autocomplete','new-password'); x.type='password'; }});
+  }
+  function cleanFormState(){
+    var key='masar_mobile_form_state';
+    var state=read(key,{});
+    var banned={studentName:1,registerName:1,phone:1,statusPhone:1,adminUser:1,adminPass:1,manageUser:1,managePass:1,ctrlStudentName:1,ctrlStudentPhone:1,mctrlStudentName:1,mctrlStudentPhone:1,mctrlResultPhone:1,mctrlResultName:1,ctrlResultPhone:1,ctrlResultName:1};
+    var changed=false;
+    Object.keys(state||{}).forEach(function(k){ if(banned[k]){ delete state[k]; changed=true; }});
+    if(changed){
+      write(key,state);
+      if(typeof syncCloudDoc==='function' && typeof CLOUD_DOCS!=='undefined') syncCloudDoc(CLOUD_DOCS.formState, state);
     }
   }
-  function fancy(title,text,icon){
-    if(typeof window.openFancyAlert === 'function') window.openFancyAlert(title,text,icon || '!');
-    else alert(text);
+
+  function openRegisterEdit(idx){
+    var r=records()[idx]; if(!r) return;
+    if(typeof showPage==='function') showPage('registerPage');
+    setTimeout(function(){
+      if(el('studentName')) el('studentName').value = r.name || '';
+      if(el('grade')) el('grade').value = r.grade || '';
+      if(el('phone')) el('phone').value = r.phone || '';
+      if(el('notes')) el('notes').value = r.notes || '';
+      localStorage.setItem('vip_edit_record_index', String(idx));
+      var btn=el('saveBtn'); if(btn) btn.textContent='حفظ تعديل بيانات المتسابق/ة';
+      window.scrollTo({top:0,behavior:'smooth'});
+    },80);
   }
-  function showContestants(){
-    if(typeof window.renderContestantsTable === 'function') window.renderContestantsTable();
-    if(typeof window.renderTable === 'function') window.renderTable();
-    if(typeof window.showPage === 'function') window.showPage('contestantsPage');
+
+  var pendingDelete = {type:null, idx:null, at:0};
+  function confirmDelete(type, idx){
+    var now=Date.now();
+    if(pendingDelete.type===type && pendingDelete.idx===idx && now-pendingDelete.at<5000){
+      pendingDelete={type:null,idx:null,at:0};
+      if(type==='record'){
+        var data=records(); var rec=data[idx]; if(!rec) return;
+        var del=deletedRecords(); del.unshift(Object.assign({},rec,{deleted:true,deletedAt:new Date().toLocaleString('ar-SA')}));
+        saveDeleted(del.slice(0,300));
+        data.splice(idx,1); saveRecordsSafe(data);
+        toast('تم الحذف','تم حذف المتسابق/ة نهائيًا من السجلات.','🗑️');
+      }else if(type==='user'){
+        var us=users(); if(!us[idx]) return;
+        us.splice(idx,1); saveUsersSafe(us);
+        toast('تم الحذف','تم حذف حساب لوحة التحكم.','🗑️');
+      }
+    }else{
+      pendingDelete={type:type,idx:idx,at:now};
+      toast('تأكيد الحذف','اضغطي زر الحذف مرة ثانية خلال 5 ثوانٍ للتأكيد.','⚠️');
+    }
   }
 
-  function siblingRegisterHandler(e){
-    e.preventDefault();
-    e.stopPropagation();
-    if(e.stopImmediatePropagation) e.stopImmediatePropagation();
+  function showUserEditor(idx){
+    var box=el('vipAccountEditBox'); if(!box) return;
+    var u=users()[idx]||{};
+    box.classList.add('active');
+    box.dataset.index=String(idx);
+    box.innerHTML = '<div class="sectionTitle" style="font-size:17px;margin-bottom:8px">تعديل حساب لوحة التحكم</div>'+
+      '<div class="row"><div class="field"><label>اسم الحساب</label><input id="vipEditUserName" class="input" value="'+esc(u.name||'')+'"></div>'+
+      '<div class="field"><label>نوع الحساب</label><input id="vipEditUserType" class="input" value="'+esc(u.type||u.role||'')+'"></div></div>'+
+      '<div class="row"><div class="field"><label>اسم المستخدم</label><input id="vipEditUsername" class="input" autocomplete="off" value="'+esc(u.username||'')+'"></div>'+
+      '<div class="field"><label>كلمة المرور الجديدة</label><input id="vipEditPassword" class="input" type="password" autocomplete="new-password" placeholder="اتركيه فارغًا للإبقاء على القديمة"></div></div>'+
+      '<div class="vipActionRow" style="margin-top:10px"><button class="vipMiniBtn edit" type="button" id="vipSaveUserEditBtn">حفظ التعديل</button><button class="vipMiniBtn soft" type="button" id="vipCancelUserEditBtn">إلغاء</button></div>';
+    el('vipCancelUserEditBtn').onclick=function(){ box.classList.remove('active'); box.innerHTML=''; };
+    el('vipSaveUserEditBtn').onclick=function(){
+      var list=users(); var i=Number(box.dataset.index); if(!list[i]) return;
+      var pass=(el('vipEditPassword').value||'').trim();
+      list[i]=Object.assign({},list[i],{
+        name:(el('vipEditUserName').value||'').trim(), type:(el('vipEditUserType').value||'').trim(), username:(el('vipEditUsername').value||'').trim(), updatedAt:new Date().toLocaleString('ar-SA')
+      });
+      if(pass) list[i].password=pass;
+      saveUsersSafe(list); box.classList.remove('active'); box.innerHTML=''; toast('تم الحفظ','تم تعديل حساب لوحة التحكم بنجاح.','✓');
+    };
+  }
 
-    var name = (qs('#studentName')?.value || '').trim();
-    var grade = (qs('#grade')?.value || '').trim();
-    var phone = cleanPhoneSmart(qs('#phone')?.value || '');
-    var notes = (qs('#notes')?.value || '').trim();
+  function rowStatus(r){ return r.cancelled ? 'ملغي' : (r.deleted?'محذوف':'نشط'); }
+  function renderVipAccountsPane(){
+    var pane=el('managePane_accounts'); if(!pane) return;
+    var rs=records(), us=users();
+    pane.innerHTML = '<div class="vipAccountsGrid">'+
+      '<div class="vipAccountsCard"><div class="vipAccountsHead"><h3>حسابات لوحة التحكم</h3><span class="statusBadge statusActive"><span class="statusDot"></span> '+us.length+' حساب</span></div><div id="vipAccountEditBox" class="vipInlineEditor"></div><div class="tableWrap"><table><thead><tr><th>#</th><th>اسم الحساب</th><th>النوع</th><th>اسم المستخدم</th><th>آخر دخول</th><th>إجراء</th></tr></thead><tbody id="vipUsersRows"></tbody></table></div><div class="vipPrivacyNotice">حفاظًا على الخصوصية لا يتم عرض كلمات المرور هنا، ويمكن تعديلها فقط من زر تعديل.</div></div>'+
+      '<div class="vipAccountsCard"><div class="vipAccountsHead"><h3>المتسابقون والمتسابقات</h3><span class="statusBadge statusActive"><span class="statusDot"></span> '+rs.length+' سجل</span></div><div class="tableWrap"><table><thead><tr><th>#</th><th>اسم المتسابق/ة</th><th>الصف</th><th>رقم ولي الأمر</th><th>الحالة</th><th>إجراء</th></tr></thead><tbody id="vipRecordsRows"></tbody></table></div></div>'+
+    '</div>';
+    var ub=el('vipUsersRows');
+    if(ub){ ub.innerHTML = us.length ? us.map(function(u,i){return '<tr><td>'+(i+1)+'</td><td>'+esc(u.name||'—')+'</td><td>'+esc(u.type||u.role||'—')+'</td><td>'+esc(u.username||'—')+'</td><td>'+esc(u.lastLogin||u.createdAt||'—')+'</td><td><div class="vipActionRow"><button class="vipMiniBtn edit" type="button" data-vip-edit-user="'+i+'">تعديل</button><button class="vipMiniBtn delete" type="button" data-vip-delete-user="'+i+'">حذف</button></div></td></tr>';}).join('') : '<tr><td colspan="6">لا توجد حسابات مسجلة حتى الآن</td></tr>'; }
+    var rb=el('vipRecordsRows');
+    if(rb){ rb.innerHTML = rs.length ? rs.map(function(r,i){return '<tr><td>'+(i+1)+'</td><td>'+esc(r.name||'—')+'</td><td>'+esc(r.grade||'—')+'</td><td>'+esc(r.phone||'—')+'</td><td>'+esc(rowStatus(r))+'</td><td><div class="vipActionRow"><button class="vipMiniBtn edit" type="button" data-vip-edit-record="'+i+'">تعديل</button><button class="vipMiniBtn delete" type="button" data-vip-delete-record="'+i+'">حذف</button></div></td></tr>';}).join('') : '<tr><td colspan="6">لا يوجد متسابقون حتى الآن</td></tr>'; }
+  }
 
-    if(!isFullNameSmart(name)){ fancy('تنبيه','يشترط إدخال الاسم الرباعي.','!'); return false; }
-    if(!grade){ fancy('تنبيه','اختاري الصف.','!'); return false; }
-    if(phone.length < 9){ fancy('تنبيه','أدخلي رقم ولي الأمر بشكل صحيح.','!'); return false; }
+  function refreshAllVip(){
+    try{ if(typeof renderTable==='function') renderTable(); }catch(e){}
+    try{ if(typeof renderContestantsTable==='function') renderContestantsTable(); }catch(e){}
+    try{ if(typeof renderAdminDataTables==='function') renderAdminDataTables(); }catch(e){}
+    try{ if(typeof window.refreshControlStudentLists==='function') window.refreshControlStudentLists(); }catch(e){}
+    renderVipAccountsPane();
+  }
 
-    var rows = readRecordsSmart();
-    var duplicate = rows.find(function(r){
-      return cleanPhoneSmart(r.phone) === phone &&
-             normalizeNameSmart(r.name) === normalizeNameSmart(name) &&
-             String(r.grade || '').trim() === grade;
-    });
-
-    if(duplicate){
-      fancy('تنبيه','هذا الطالب/ة مسجل مسبقًا بنفس الاسم والصف ورقم ولي الأمر.','!');
+  function bindSaveOverride(){
+    document.addEventListener('click', function(e){
+      var btn=e.target && e.target.closest ? e.target.closest('#saveBtn') : null;
+      if(!btn) return;
+      e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
+      var name=(el('studentName')&&el('studentName').value||'').trim();
+      var grade=(el('grade')&&el('grade').value||'').trim();
+      var phone=clean(el('phone')&&el('phone').value||'');
+      var notes=(el('notes')&&el('notes').value||'').trim();
+      if(name.split(/\s+/).filter(Boolean).length<4){ toast('تنبيه','يشترط إدخال الاسم الرباعي للطالب/ة.','!'); return false; }
+      if(!grade){ toast('تنبيه','اختاري الصف أولًا.','!'); return false; }
+      if(phone.length<9){ toast('تنبيه','أدخلي رقم ولي الأمر بشكل صحيح.','!'); return false; }
+      var data=records();
+      var editIndex=localStorage.getItem('vip_edit_record_index');
+      var idx = editIndex!==null && editIndex!=='' ? Number(editIndex) : -1;
+      if(!(idx>=0 && data[idx])) idx = data.findIndex(function(r){ return clean(r.phone)===phone; });
+      var base = idx>=0 ? data[idx] : {};
+      var rec=Object.assign({}, base, {name:name, grade:grade, phone:phone, notes:notes, updatedAt:new Date().toLocaleString('ar-SA')});
+      if(!rec.createdAt) rec.createdAt=new Date().toLocaleString('ar-SA');
+      if(!rec.nomination) rec.nomination='قيد الترشيح';
+      if(!rec.sorting) rec.sorting='بانتظار الفرز';
+      if(!rec.final) rec.final='بانتظار النهائي';
+      rec.cancelled=!!rec.cancelled;
+      if(idx>=0) data[idx]=rec; else data.push(rec);
+      saveRecordsSafe(data);
+      localStorage.removeItem('vip_edit_record_index');
+      if(btn) btn.textContent='تسجيل';
+      clearRegisterFields(); cleanFormState();
+      toast('تم حفظ البيانات بنجاح','تم تسجيل بيانات المتسابق/ة وحفظها بنجاح.','✓');
       return false;
-    }
-
-    rows.push({
-      id:'rec_' + Date.now() + '_' + Math.random().toString(36).slice(2,10),
-      name:name,
-      grade:grade,
-      phone:phone,
-      notes:notes,
-      createdAt:new Date().toLocaleString('ar-SA'),
-      updatedAt:new Date().toLocaleString('ar-SA'),
-      nomination:'قيد الترشيح',
-      sorting:'بانتظار الفرز',
-      final:'بانتظار النهائي',
-      stageOne:'قيد الترشيح',
-      stageTwo:'بانتظار الفرز',
-      stageThree:'بانتظار النهائي',
-      cancelled:false,
-      cancelReason:''
-    });
-
-    writeRecordsSmart(rows);
-    fancy('تم بنجاح','تم تسجيل الطالب/ة بنجاح، ويمكن تسجيل الإخوة والأخوات بنفس رقم ولي الأمر.','✓');
-    ['studentName','grade','phone','notes'].forEach(function(id){
-      var el = qs('#'+id);
-      if(el) el.value = '';
-    });
-    setTimeout(showContestants, 450);
-    return false;
+    }, true);
   }
 
-  function installSiblingRegisterFix(){
-    var btn = qs('#saveBtn');
-    if(!btn) return;
-    var clone = btn.cloneNode(true);
-    btn.parentNode.replaceChild(clone, btn);
-    clone.addEventListener('click', siblingRegisterHandler, true);
+  function bindActions(){
+    document.addEventListener('click', function(e){
+      var t=e.target;
+      var editRec=t.closest && t.closest('[data-vip-edit-record]');
+      if(editRec){ e.preventDefault(); openRegisterEdit(Number(editRec.dataset.vipEditRecord)); return; }
+      var delRec=t.closest && t.closest('[data-vip-delete-record]');
+      if(delRec){ e.preventDefault(); confirmDelete('record', Number(delRec.dataset.vipDeleteRecord)); return; }
+      var editUser=t.closest && t.closest('[data-vip-edit-user]');
+      if(editUser){ e.preventDefault(); showUserEditor(Number(editUser.dataset.vipEditUser)); return; }
+      var delUser=t.closest && t.closest('[data-vip-delete-user]');
+      if(delUser){ e.preventDefault(); confirmDelete('user', Number(delUser.dataset.vipDeleteUser)); return; }
+      var tab=t.closest && t.closest('.manageVipTab[data-mtab="accounts"]');
+      if(tab){ setTimeout(renderVipAccountsPane, 80); }
+      if(t.closest && t.closest('#adminLoginBtn,#manageLoginBtn')){ setTimeout(function(){ clearLoginFields(); cleanFormState(); }, 250); }
+    }, true);
   }
 
-  if(document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', installSiblingRegisterFix);
-  }else{
-    installSiblingRegisterFix();
+  function hardenExistingTables(){
+    // إخفاء كلمة المرور من أي جدول قديم إذا تم عرضه في مكان آخر
+    all('#usersAdminBody tr').forEach(function(tr){ var cells=tr.querySelectorAll('td'); if(cells.length>=5) cells[4].textContent='••••••'; });
   }
+
+  function init(){
+    privacyAutocomplete();
+    cleanFormState();
+    setTimeout(function(){ clearSensitiveVisible(); }, 250);
+    bindSaveOverride();
+    bindActions();
+    renderVipAccountsPane();
+    hardenExistingTables();
+    setInterval(function(){ privacyAutocomplete(); hardenExistingTables(); }, 2500);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', init); else init();
+  window.addEventListener('load', function(){ setTimeout(function(){ cleanFormState(); renderVipAccountsPane(); }, 800); });
+  window.renderVipAccountsPane = renderVipAccountsPane;
 })();
 </script>
 
@@ -4861,70 +5204,5 @@ document.addEventListener('click', function(e){
     new MutationObserver(function(){ clearTimeout(timer); timer=setTimeout(function(){walk(document.body,current)},250); }).observe(document.body,{childList:true,subtree:true});
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();
-})();
-</script>
-
-<script id="masar-final-success-card-fix">
-(function(){
-  function ensureFancyAlert(){
-    var overlay = document.getElementById('fancyAlertOverlay');
-    if(!overlay){
-      overlay = document.createElement('div');
-      overlay.id = 'fancyAlertOverlay';
-      overlay.className = 'fancyAlertOverlay';
-      overlay.innerHTML = '<div class="fancyAlertCard"><button id="fancyAlertClose" class="fancyAlertClose" type="button">×</button><div id="fancyAlertIcon" class="fancyAlertIcon">✓</div><h3 id="fancyAlertTitle" class="fancyAlertTitle">تم حفظ البيانات بنجاح ✅</h3><p id="fancyAlertText" class="fancyAlertText">تم تسجيل الطالب/ة وحفظ البيانات بنجاح.</p><div class="fancyAlertActions"><button id="fancyAlertOk" class="fancyAlertBtn primary" type="button">إغلاق</button></div></div>';
-      document.body.appendChild(overlay);
-    }
-    return overlay;
-  }
-  function closeCard(){
-    var overlay = document.getElementById('fancyAlertOverlay');
-    if(overlay){ overlay.classList.remove('active'); overlay.style.display = 'none'; }
-  }
-  function bindClose(){
-    var ok = document.getElementById('fancyAlertOk');
-    var x = document.getElementById('fancyAlertClose');
-    var overlay = document.getElementById('fancyAlertOverlay');
-    if(ok) ok.onclick = closeCard;
-    if(x) x.onclick = closeCard;
-    if(overlay && overlay.dataset.finalSuccessBound !== '1'){
-      overlay.dataset.finalSuccessBound = '1';
-      overlay.addEventListener('click', function(e){ if(e.target === overlay) closeCard(); });
-    }
-  }
-  function showCard(title, text, icon){
-    var overlay = ensureFancyAlert();
-    var titleEl = document.getElementById('fancyAlertTitle');
-    var textEl = document.getElementById('fancyAlertText');
-    var iconEl = document.getElementById('fancyAlertIcon');
-    var successTitle = 'تم حفظ البيانات بنجاح ✅';
-    var successText = 'تم تسجيل الطالب/ة وحفظ البيانات بنجاح.';
-    var t = String(title || '');
-    var m = String(text || '');
-    if(t.indexOf('تم بنجاح') !== -1 || m.indexOf('records') !== -1 || m.indexOf('تسجيل الطالب') !== -1){
-      title = successTitle;
-      text = successText;
-      icon = '✓';
-    }
-    if(titleEl) titleEl.textContent = title || successTitle;
-    if(textEl) textEl.textContent = text || successText;
-    if(iconEl) iconEl.textContent = icon || '✓';
-    overlay.style.display = 'flex';
-    overlay.style.zIndex = '12000';
-    overlay.classList.add('active');
-    bindClose();
-  }
-  window.showFancyAlert = showCard;
-  window.showSuccessSaveAlert = function(){ showCard('تم حفظ البيانات بنجاح ✅','تم تسجيل الطالب/ة وحفظ البيانات بنجاح.','✓'); };
-  var nativeAlert = window.alert;
-  window.alert = function(message){
-    var m = String(message || '');
-    if(m.indexOf('تم تسجيل') !== -1 || m.indexOf('حفظ') !== -1 || m.indexOf('records') !== -1){
-      showCard('تم حفظ البيانات بنجاح ✅','تم تسجيل الطالب/ة وحفظ البيانات بنجاح.','✓');
-    } else {
-      showCard('تنبيه', m, '!');
-    }
-  };
-  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bindClose); else bindClose();
 })();
 </script>
