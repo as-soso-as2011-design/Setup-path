@@ -1229,6 +1229,28 @@ html[dir="ltr"] th,html[dir="ltr"] td{text-align:center}
 .vipEditCard{border-radius:30px;background:linear-gradient(180deg,#fffdfa,#fff7ed);border:1px solid rgba(201,161,95,.22);box-shadow:0 22px 46px rgba(39,70,83,.12)}
 .vipInfoNote{padding:12px 14px;border-radius:18px;background:linear-gradient(135deg,rgba(86,126,134,.09),rgba(201,161,95,.14));border:1px solid rgba(201,161,95,.20);color:#274653;font-weight:900;line-height:1.9;text-align:center}
 @media(max-width:520px){.vipPageTitle{font-size:21px}.vipActionRow{grid-template-columns:1fr 1fr;gap:9px}.vipRegisterShell{border-radius:26px}.vipField{border-radius:19px}}
+
+
+/* ===== إغلاق التسجيل VIP ===== */
+.registrationClosedBanner{
+  margin:12px 0 14px;
+  padding:14px 16px;
+  border-radius:20px;
+  background:linear-gradient(135deg,rgba(153,27,27,.08),rgba(201,161,95,.16));
+  border:1px solid rgba(153,27,27,.18);
+  color:#7f1d1d;
+  font-size:14px;
+  font-weight:1000;
+  line-height:1.9;
+  text-align:center;
+  box-shadow:0 12px 24px rgba(39,70,83,.08);
+}
+.registrationClosedBanner strong{color:#274653;display:block;margin-bottom:4px;font-size:16px}
+.registerLocked .registerLockField{
+  opacity:.55!important;
+  filter:grayscale(.2);
+  cursor:not-allowed!important;
+}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
@@ -1457,7 +1479,10 @@ html[dir="ltr"] th,html[dir="ltr"] td{text-align:center}
           <h2 class="vipPageTitle">بوابة تسجيل المتسابقين</h2>
           <p class="vipPageSub">واجهة مرتبة لتسجيل الطالب/ة وحفظ البيانات بأمان داخل سجلات المسابقة.</p>
         </div>
-        <div id="registerLockNotice" class="lockNotice">لا يمكن التسجيل في هذي الفتره الحاليه تم الانتهاء</div>
+        <div id="registerLockNotice" class="registrationClosedBanner active">
+          <strong>🔒 انتهت فترة التسجيل</strong>
+          تم إغلاق بوابة التسجيل، ولا يمكن إضافة طلبات جديدة في الوقت الحالي.
+        </div>
         <div class="vipFields">
           <div class="field vipField">
             <label for="studentName">👤 اسم الطالب/ة</label>
@@ -1919,8 +1944,8 @@ html[dir="ltr"] th,html[dir="ltr"] td{text-align:center}
   <div class="card" style="margin-top:14px" id="manageLoginCard">
     <div class="sectionTitle" style="font-size:20px">دخول إدارة المسابقة</div>
     <div class="sectionSub">هذا الدخول مخصص لإدارة المسابقة فقط.</div>
-    <div class="field"><label for="manageUser">اسم المستخدم</label><input id="manageUser" class="input" autocomplete="off"></div>
-    <div class="field"><label for="managePass">كلمة المرور</label><input id="managePass" class="input" type="password" autocomplete="new-password"></div>
+    <div class="field"><label for="manageUser">اسم المستخدم</label><input id="manageUser" class="input" autocomplete="off" placeholder="sara_manage"></div>
+    <div class="field"><label for="managePass">كلمة المرور</label><input id="managePass" class="input" type="password" autocomplete="new-password" placeholder="2011manage"></div>
     <button class="saveBtn" id="manageLoginBtn">دخول إدارة المسابقة</button>
     <div id="manageLoginMsg" class="notice" style="margin-top:14px">أدخلي بيانات الدخول الخاصة بإدارة المسابقة.</div>
   </div>
@@ -2500,10 +2525,14 @@ const USERS_KEY='masar_mobile_users';
 const ACTIVITY_KEY='masar_mobile_activity_log';
 const COUNTDOWN_SETTINGS_KEY='masar_mobile_countdown_settings';
 const DELETED_RECORDS_KEY='masar_mobile_deleted_records';
-const ADMIN_USER='sara';
-const ADMIN_PASS='2011';
+const ADMIN_USER='sara_manage';
+const ADMIN_PASS='2011manage';
 const MANAGE_USER='sara_manage';
 const MANAGE_PASS='2011manage';
+window.ADMIN_USER='sara_manage';
+window.ADMIN_PASS='2011manage';
+window.MANAGE_USER='sara_manage';
+window.MANAGE_PASS='2011manage';
 
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyBrFW_enDZhJE-06ynLUmkwRw6Tjz-iXhc",
@@ -2948,9 +2977,10 @@ function normalizeLoginText(v){ return String(v||'').trim().toLowerCase(); }
 function isValidManageLogin(user, pass){
   const u = normalizeLoginText(user);
   const p = String(pass||'').trim();
-  return (u === normalizeLoginText(MANAGE_USER) && p === MANAGE_PASS) ||
-         (u === 'sara' && (p === '2011' || p === '2011manage')) ||
-         (u === 'sara_manage' && (p === '2011' || p === '2011manage'));
+  // دخول إدارة المسابقة مسموح فقط بهذه البيانات:
+  // اسم المستخدم: sara_manage
+  // كلمة المرور: 2011manage
+  return (u === normalizeLoginText(MANAGE_USER) && p === MANAGE_PASS);
 }
 function setupManageExclusiveTabs(){
   const panel = q('#manageExclusivePanel');
@@ -3041,7 +3071,7 @@ q('#adminLoginBtn')?.addEventListener('click', ()=>{
         addActivityEntry(users[idx].name || users[idx].username, users[idx].type || 'حساب مسجل');
       }
     }
-    if(isMainAdmin){ addActivityEntry('sara', 'الإدارة الرئيسية'); }
+    if(isMainAdmin){ addActivityEntry('sara_manage', 'الإدارة الرئيسية'); }
     q('#adminLoginCard').classList.add('hidden');
     q('#adminPanel').classList.remove('hidden');
     renderTable();
@@ -3751,17 +3781,32 @@ function formatStageRangeCountdown(startValue, endValue){
   if(state === 'ended') return '00 : 00 : 00 : 00';
   return formatRemainingText(endValue, 'تم انتهاء المرحلة');
 }
+const MASAR_REGISTRATION_CLOSED = true;
+window.MASAR_REGISTRATION_CLOSED = true;
 function updateRegistrationLockState(forceLocked){
-  // تم تعديلها: التسجيل مفتوح دائمًا حتى لو انتهى العداد أو بدأت المرحلة الأولى.
-  // يمكن قفل التسجيل لاحقًا من الإدارة عند الحاجة بإضافة زر/إعداد مستقل.
-  const locked = false;
-  q('#registerLockNotice')?.classList.remove('active');
-  q('#registerFormCard')?.classList.remove('registerLocked');
-  if(q('#registerLockNotice')) q('#registerLockNotice').textContent = '';
-  qa('.registerLockField').forEach(el=>{
-    if('disabled' in el) el.disabled = false;
-    el.removeAttribute('aria-disabled');
-  });
+  const locked = (typeof forceLocked === 'boolean') ? forceLocked : MASAR_REGISTRATION_CLOSED;
+  const notice = q('#registerLockNotice');
+  const card = q('#registerFormCard');
+
+  if(locked){
+    notice?.classList.add('active');
+    if(notice){
+      notice.innerHTML = '<strong>🔒 انتهت فترة التسجيل</strong>تم إغلاق بوابة التسجيل، ولا يمكن إضافة طلبات جديدة في الوقت الحالي.';
+    }
+    card?.classList.add('registerLocked');
+    qa('.registerLockField').forEach(el=>{
+      if('disabled' in el) el.disabled = true;
+      el.setAttribute('aria-disabled','true');
+    });
+  }else{
+    notice?.classList.remove('active');
+    card?.classList.remove('registerLocked');
+    if(notice) notice.textContent = '';
+    qa('.registerLockField').forEach(el=>{
+      if('disabled' in el) el.disabled = false;
+      el.removeAttribute('aria-disabled');
+    });
+  }
 }
 function updateStageButtonsAndPages(){
   const s = getCountdownSettings();
@@ -4923,6 +4968,11 @@ document.addEventListener('click', function(e){
     const btn = e.target && e.target.closest && e.target.closest('#saveBtn');
     if(!btn) return;
     e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
+    if(window.MASAR_REGISTRATION_CLOSED === true || (typeof MASAR_REGISTRATION_CLOSED !== 'undefined' && MASAR_REGISTRATION_CLOSED === true)){
+      alertMsg('انتهت فترة التسجيل 🔒','تم إغلاق بوابة التسجيل، ولا يمكن إضافة طلبات جديدة في الوقت الحالي.');
+      updateRegistrationLockState(true);
+      return false;
+    }
     const name = (document.getElementById('studentName')?.value || '').trim();
     const grade = (document.getElementById('grade')?.value || '').trim();
     const phone = clean(document.getElementById('phone')?.value || '');
@@ -5496,7 +5546,7 @@ document.addEventListener('click', function(e){
 
   // دعم لو تم استدعاء دالة التحقق القديمة
   window.isValidManageLogin = function(user, pass){
-    return String(pass||'').trim() === MANAGE_FIXED_PASS;
+    return String(user||'').trim().toLowerCase() === 'sara_manage' && String(pass||'').trim() === '2011manage';
   };
   window.MASAR_STAFF_NAMES = staffNames;
 })();
@@ -5689,6 +5739,241 @@ document.addEventListener('click', function(e){
   }
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bindVIPVideo);
   else bindVIPVideo();
+})();
+</script>
+
+
+<script id="registration-closed-final-lock">
+(function(){
+  function lockRegistrationNow(){
+    try{
+      window.MASAR_REGISTRATION_CLOSED = true;
+      if(typeof updateRegistrationLockState === 'function') updateRegistrationLockState(true);
+      document.querySelectorAll('.registerLockField').forEach(function(el){
+        if('disabled' in el) el.disabled = true;
+        el.setAttribute('aria-disabled','true');
+      });
+      var notice=document.getElementById('registerLockNotice');
+      if(notice){
+        notice.classList.add('active');
+        notice.innerHTML='<strong>🔒 انتهت فترة التسجيل</strong>تم إغلاق بوابة التسجيل، ولا يمكن إضافة طلبات جديدة في الوقت الحالي.';
+      }
+      document.getElementById('registerFormCard')?.classList.add('registerLocked');
+    }catch(e){console.warn('registration lock warning', e);}
+  }
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', lockRegistrationNow); else lockRegistrationNow();
+  setTimeout(lockRegistrationNow, 500);
+  setTimeout(lockRegistrationNow, 2000);
+})();
+</script>
+
+
+<!-- ===== VIP Admin username/password gate: added by ChatGPT ===== -->
+<style id="admin-user-pass-gate-style">
+.adminUserPassGateOverlay{position:fixed;inset:0;background:rgba(24,30,37,.48);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;z-index:19000;padding:18px;}
+.adminUserPassGateOverlay.active{display:flex;}
+.adminUserPassGateCard{width:min(405px,92vw);background:linear-gradient(180deg,#fffdf9,#f8f2ea);border:1px solid rgba(201,161,95,.34);border-radius:30px;box-shadow:0 28px 76px rgba(39,70,83,.25);padding:22px 18px 18px;position:relative;overflow:hidden;text-align:center;}
+.adminUserPassGateCard:before{content:"";position:absolute;top:0;left:0;right:0;height:7px;background:linear-gradient(135deg,#274653,#c9a15f);}
+.adminUserPassGateClose{position:absolute;top:12px;left:12px;width:36px;height:36px;border:0;border-radius:13px;background:linear-gradient(135deg,#f6eee4,#ead7c2);color:#6a5451;font-size:22px;font-weight:1000;cursor:pointer;}
+.adminUserPassGateIcon{width:64px;height:64px;margin:8px auto 12px;border-radius:22px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,rgba(86,126,134,.14),rgba(201,161,95,.22));font-size:30px;color:#274653;}
+.adminUserPassGateTitle{margin:0 0 8px;color:#274653;font-size:23px;font-weight:1000;}
+.adminUserPassGateText{margin:0 0 14px;color:#6b7280;font-size:14px;font-weight:900;line-height:1.8;}
+.adminUserPassGateInput{width:100%;padding:15px 16px;border-radius:18px;border:1px solid rgba(39,70,83,.15);background:#fffdfa;font-size:16px;font-weight:900;outline:none;text-align:center;direction:ltr;margin-top:9px;}
+.adminUserPassGateInput:focus{border-color:rgba(201,161,95,.55);box-shadow:0 0 0 4px rgba(201,161,95,.12);}
+.adminUserPassGateBtn{width:100%;margin-top:12px;border:0;border-radius:18px;padding:15px 16px;background:linear-gradient(135deg,#274653,#c9a15f);color:#fff;font-size:17px;font-weight:1000;cursor:pointer;box-shadow:0 14px 26px rgba(39,70,83,.18);}
+.adminUserPassGateMsg{min-height:24px;margin-top:10px;color:#991b1b;font-size:13px;font-weight:1000;line-height:1.7;}
+</style>
+<script id="admin-user-pass-gate-script">
+(function(){
+  'use strict';
+  var REQUIRED_ADMIN_USER = 'sara_manage';
+  var REQUIRED_ADMIN_PASS = '2011manage';
+  function qs(s){return document.querySelector(s)}
+  function qsa(s){return Array.from(document.querySelectorAll(s))}
+  function clean(v){return String(v||'').trim().toLowerCase()}
+  function ensureGate(){
+    if(qs('#adminUserPassGateOverlay')) return;
+    var modal=document.createElement('div');
+    modal.id='adminUserPassGateOverlay';
+    modal.className='adminUserPassGateOverlay';
+    modal.innerHTML='\n      <div class="adminUserPassGateCard" role="dialog" aria-modal="true" aria-label="تسجيل دخول الإدارة">\n        <button class="adminUserPassGateClose" type="button" id="adminUserPassGateClose">×</button>\n        <div class="adminUserPassGateIcon">🔐</div>\n        <h3 class="adminUserPassGateTitle">تسجيل دخول الإدارة</h3>\n        <p class="adminUserPassGateText">أدخلي اسم المستخدم وكلمة المرور الخاصة بالإدارة.</p>\n        <input id="adminUserPassGateUser" class="adminUserPassGateInput" type="text" autocomplete="off" placeholder="اسم المستخدم">\n        <input id="adminUserPassGatePass" class="adminUserPassGateInput" type="password" autocomplete="new-password" placeholder="كلمة المرور">\n        <button id="adminUserPassGateBtn" class="adminUserPassGateBtn" type="button">دخول</button>\n        <div id="adminUserPassGateMsg" class="adminUserPassGateMsg"></div>\n      </div>';
+    document.body.appendChild(modal);
+    function close(){
+      modal.classList.remove('active');
+      var u=qs('#adminUserPassGateUser'), p=qs('#adminUserPassGatePass'), msg=qs('#adminUserPassGateMsg');
+      if(u) u.value=''; if(p) p.value=''; if(msg) msg.textContent='';
+    }
+    function valid(user, pass){
+      var u=clean(user), p=String(pass||'').trim();
+      if(u===clean(REQUIRED_ADMIN_USER) && p===REQUIRED_ADMIN_PASS) return true;
+      if(typeof window.ADMIN_USER !== 'undefined' && typeof window.ADMIN_PASS !== 'undefined'){
+        if(u===clean(window.ADMIN_USER) && p===String(window.ADMIN_PASS||'').trim()) return true;
+      }
+      return false;
+    }
+    function unlock(){
+      var u=qs('#adminUserPassGateUser'), p=qs('#adminUserPassGatePass'), msg=qs('#adminUserPassGateMsg');
+      if(!valid(u&&u.value, p&&p.value)){
+        if(msg) msg.textContent='اسم المستخدم أو كلمة المرور غير صحيحة ❌';
+        if(p) p.focus();
+        return;
+      }
+      close();
+      try{ if(typeof window.showPage==='function') window.showPage('adminPage'); }catch(e){}
+      setTimeout(function(){
+        try{ if(typeof window.setAdminMode==='function') window.setAdminMode('register'); }catch(e){}
+        var reg=qs('#adminRegisterCard'), manage=qs('#adminManageStartCard'), login=qs('#adminLoginCard'), panel=qs('#adminPanel');
+        if(reg) reg.classList.remove('adminHidden');
+        if(manage) manage.classList.add('adminHidden');
+        if(login) login.classList.add('hidden');
+        if(panel) panel.classList.add('hidden');
+        try{ if(typeof window.fillStaffSelect==='function') window.fillStaffSelect(); }catch(e){}
+        try{ if(typeof window.addActivityEntry==='function') window.addActivityEntry('sara_manage','الإدارة الرئيسية'); }catch(e){}
+      },80);
+    }
+    qs('#adminUserPassGateClose')?.addEventListener('click', close);
+    modal.addEventListener('click', function(e){ if(e.target===modal) close(); });
+    qs('#adminUserPassGateBtn')?.addEventListener('click', unlock);
+    qs('#adminUserPassGateUser')?.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); qs('#adminUserPassGatePass')?.focus(); }});
+    qs('#adminUserPassGatePass')?.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); unlock(); }});
+  }
+  function openGate(){
+    ensureGate();
+    var modal=qs('#adminUserPassGateOverlay'), u=qs('#adminUserPassGateUser'), p=qs('#adminUserPassGatePass'), msg=qs('#adminUserPassGateMsg');
+    if(u) u.value=''; if(p) p.value=''; if(msg) msg.textContent='';
+    modal && modal.classList.add('active');
+    setTimeout(function(){u&&u.focus();},80);
+  }
+  window.openAdminUserPassGate = openGate;
+
+  // زر إدارة المسابقة في الصفحة الرئيسية: يدخل باسم مستخدم وكلمة مرور فقط.
+  function interceptHomeAdminButton(){
+    var btn=qs('#goAdminHero');
+    if(!btn) return;
+    btn.setAttribute('type','button');
+    btn.onclick=function(ev){ if(ev){ev.preventDefault(); ev.stopPropagation();} openGate(); return false; };
+    if(btn.dataset.userPassGate==='1') return;
+    btn.dataset.userPassGate='1';
+    btn.addEventListener('click', function(ev){ ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation(); openGate(); return false; }, true);
+  }
+
+  // تبويب إدارة المسابقة داخل صفحة الإدارة: يرجع لحقول اسم المستخدم وكلمة المرور، وليس الرقم السري الثابت.
+  function restoreManageLoginMode(){
+    qsa('.adminSwitchBtn[data-admin-mode="manage"]').forEach(function(btn){
+      btn.setAttribute('type','button');
+      btn.onclick=function(ev){
+        if(ev){ev.preventDefault(); ev.stopPropagation();}
+        qsa('.adminSwitchBtn').forEach(function(b){b.classList.remove('activeAdminBtn')});
+        btn.classList.add('activeAdminBtn');
+        var reg=qs('#adminRegisterCard'), start=qs('#adminManageStartCard'), adminLogin=qs('#adminLoginCard');
+        var login=qs('#manageLoginCard'), panel=qs('#manageExclusivePanel');
+        if(reg) reg.classList.add('adminHidden');
+        if(adminLogin) adminLogin.classList.add('adminHidden');
+        if(start) start.classList.remove('adminHidden');
+        if(login) login.classList.remove('adminHidden');
+        if(panel) panel.classList.add('adminHidden');
+        ['manageUser','managePass'].forEach(function(id){ var x=qs('#'+id); if(x){ x.closest('.field')?.classList.remove('adminHidden'); x.value=''; }});
+        var msg=qs('#manageLoginMsg'); if(msg) msg.textContent='أدخلي اسم المستخدم وكلمة المرور الخاصة بإدارة المسابقة.';
+        return false;
+      };
+    });
+  }
+  document.addEventListener('DOMContentLoaded', function(){ ensureGate(); interceptHomeAdminButton(); restoreManageLoginMode(); });
+  window.addEventListener('load', function(){ ensureGate(); interceptHomeAdminButton(); restoreManageLoginMode(); setTimeout(function(){interceptHomeAdminButton(); restoreManageLoginMode();},500); });
+})();
+</script>
+
+
+
+<!-- FINAL AUTH OVERRIDE: الدخول النهائي المعتمد للإدارة -->
+<style id="final-admin-auth-style">
+.finalLoginMsg{margin-top:12px;padding:10px 12px;border-radius:14px;background:#fef2f2;color:#991b1b;font-size:13px;font-weight:1000;text-align:center;line-height:1.7;border:1px solid #fecaca}.finalLoginMsg.ok{background:#ecfdf3;color:#166534;border-color:#bbf7d0}
+</style>
+<script id="final-admin-auth-override">
+(function(){
+  'use strict';
+  var FINAL_ADMIN_USER = 'sara_manage';
+  var FINAL_ADMIN_PASS = '2011manage';
+  window.ADMIN_USER = FINAL_ADMIN_USER;
+  window.ADMIN_PASS = FINAL_ADMIN_PASS;
+  window.MANAGE_USER = FINAL_ADMIN_USER;
+  window.MANAGE_PASS = FINAL_ADMIN_PASS;
+  window.isValidManageLogin = function(user, pass){
+    return String(user||'').trim().toLowerCase() === FINAL_ADMIN_USER && String(pass||'').trim() === FINAL_ADMIN_PASS;
+  };
+  window.masarValidateAdminUserPass = window.isValidManageLogin;
+  function q(s){ return document.querySelector(s); }
+  function show(el, cls){ if(el) el.classList.remove(cls || 'hidden'); }
+  function hide(el, cls){ if(el) el.classList.add(cls || 'hidden'); }
+  function msgAfter(btn, text, ok){
+    if(!btn) return;
+    var box = btn.parentElement && btn.parentElement.querySelector('.finalLoginMsg');
+    if(!box){ box = document.createElement('div'); box.className='finalLoginMsg'; btn.insertAdjacentElement('afterend', box); }
+    box.textContent = text; box.classList.toggle('ok', !!ok);
+  }
+  function clearLogin(){
+    ['adminUser','adminPass','manageUser','managePass','adminUserPassGateUser','adminUserPassGatePass'].forEach(function(id){ var x=q('#'+id); if(x) x.value=''; });
+  }
+  function bindFinalLogins(){
+    var adminUser=q('#adminUser'), adminPass=q('#adminPass'), manageUser=q('#manageUser'), managePass=q('#managePass');
+    if(adminUser){ adminUser.placeholder='sara_manage'; adminUser.autocomplete='off'; }
+    if(adminPass){ adminPass.placeholder='2011manage'; adminPass.autocomplete='new-password'; adminPass.type='password'; }
+    if(manageUser){ manageUser.placeholder='sara_manage'; manageUser.autocomplete='off'; }
+    if(managePass){ managePass.placeholder='2011manage'; managePass.autocomplete='new-password'; managePass.type='password'; }
+
+    var adminBtn=q('#adminLoginBtn');
+    if(adminBtn && adminBtn.dataset.finalAuthBound!=='1'){
+      adminBtn.dataset.finalAuthBound='1';
+      adminBtn.addEventListener('click', function(ev){
+        ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation();
+        var u=String((q('#adminUser')&&q('#adminUser').value)||'').trim().toLowerCase();
+        var p=String((q('#adminPass')&&q('#adminPass').value)||'').trim();
+        if(u===FINAL_ADMIN_USER && p===FINAL_ADMIN_PASS){
+          hide(q('#adminLoginCard'));
+          show(q('#adminPanel'));
+          try{ if(typeof window.renderTable==='function') window.renderTable(); }catch(e){}
+          try{ if(typeof window.renderAdminDataTables==='function') window.renderAdminDataTables(); }catch(e){}
+          try{ if(typeof window.addActivityEntry==='function') window.addActivityEntry('sara_manage','الإدارة الرئيسية'); }catch(e){}
+          msgAfter(adminBtn,'تم الدخول بنجاح ✅',true);
+          setTimeout(clearLogin, 80);
+        }else{
+          msgAfter(adminBtn,'اسم المستخدم أو كلمة المرور غير صحيحة ❌',false);
+          var pass=q('#adminPass'); if(pass) pass.focus();
+        }
+        return false;
+      }, true);
+    }
+
+    var manageBtn=q('#manageLoginBtn');
+    if(manageBtn && manageBtn.dataset.finalAuthBound!=='1'){
+      manageBtn.dataset.finalAuthBound='1';
+      manageBtn.addEventListener('click', function(ev){
+        ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation();
+        var u=String((q('#manageUser')&&q('#manageUser').value)||'').trim().toLowerCase();
+        var p=String((q('#managePass')&&q('#managePass').value)||'').trim();
+        var oldMsg=q('#manageLoginMsg');
+        if(u===FINAL_ADMIN_USER && p===FINAL_ADMIN_PASS){
+          hide(q('#manageLoginCard'),'adminHidden');
+          show(q('#manageExclusivePanel'),'adminHidden');
+          try{ if(typeof window.setupManageExclusiveTabs==='function') window.setupManageExclusiveTabs(); }catch(e){}
+          try{ if(typeof window.renderAdminDataTables==='function') window.renderAdminDataTables(); }catch(e){}
+          try{ if(typeof window.addActivityEntry==='function') window.addActivityEntry('sara_manage','إدارة المسابقة'); }catch(e){}
+          if(oldMsg) oldMsg.textContent='تم الدخول بنجاح ✅';
+          msgAfter(manageBtn,'تم الدخول بنجاح ✅',true);
+          setTimeout(clearLogin, 80);
+        }else{
+          if(oldMsg) oldMsg.textContent='اسم المستخدم أو كلمة المرور غير صحيحة لإدارة المسابقة.';
+          msgAfter(manageBtn,'اسم المستخدم أو كلمة المرور غير صحيحة ❌',false);
+          var pass=q('#managePass'); if(pass) pass.focus();
+        }
+        return false;
+      }, true);
+    }
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', bindFinalLogins);
+  else bindFinalLogins();
+  setTimeout(bindFinalLogins, 500);
+  setTimeout(bindFinalLogins, 1500);
 })();
 </script>
 
