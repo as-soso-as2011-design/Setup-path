@@ -1273,8 +1273,81 @@ html[dir="ltr"] th,html[dir="ltr"] td{text-align:center}
 .stageAccessNote{margin:10px 0 0;padding:11px 13px;border-radius:16px;background:linear-gradient(135deg,rgba(86,126,134,.10),rgba(201,161,95,.15));border:1px solid rgba(201,161,95,.22);color:#274653;font-size:13px;font-weight:1000;text-align:center;line-height:1.8;}
 .stageLocked select,.stageLocked button{pointer-events:none!important;}
 </style>
+
+<style id="staff-secure-vip-style">
+.staffSecureNotice{margin-top:10px;padding:11px 13px;border-radius:16px;background:linear-gradient(135deg,rgba(39,70,83,.08),rgba(201,161,95,.16));border:1px solid rgba(201,161,95,.22);color:#274653;font-size:13px;font-weight:1000;line-height:1.8;text-align:center}
+#registerName option{font-weight:800}
+</style>
+
+<style id="vip-youtube-video-style">
+/* ===== VIP YouTube intro video ===== */
+.vipVideoPopup{
+  position:fixed;inset:0;z-index:15000;display:flex;align-items:center;justify-content:center;
+  padding:18px;background:rgba(15,23,42,.72);backdrop-filter:blur(10px);
+  animation:vipVideoFade .35s ease both;
+}
+.vipVideoPopup.hidden{display:none!important}
+.vipVideoShell{
+  width:min(520px,94vw);position:relative;border-radius:30px;padding:10px;
+  background:linear-gradient(135deg,rgba(39,70,83,.95),rgba(201,161,95,.95));
+  box-shadow:0 28px 72px rgba(0,0,0,.42);overflow:hidden;border:1px solid rgba(255,255,255,.24);
+}
+.vipVideoShell:before{content:"";position:absolute;inset:0;background:radial-gradient(circle at top right,rgba(255,255,255,.22),transparent 36%);pointer-events:none}
+.vipVideoHeader{position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 9px 11px;color:#fff}
+.vipVideoTitle{font-size:14px;font-weight:1000;line-height:1.7}
+.vipVideoClose{
+  width:38px;height:38px;border:0;border-radius:14px;background:rgba(255,255,255,.94);color:#274653;
+  font-size:22px;font-weight:1000;cursor:pointer;box-shadow:0 8px 18px rgba(0,0,0,.16);
+}
+.vipVideoFrameWrap{position:relative;z-index:1;width:100%;aspect-ratio:16/9;border-radius:24px;overflow:hidden;background:#0f172a;border:1px solid rgba(255,255,255,.22)}
+.vipVideoFrameWrap iframe{width:100%;height:100%;border:0;display:block}
+.vipBigPlay{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:3;
+  width:76px;height:76px;border-radius:50%;border:1px solid rgba(255,255,255,.55);
+  background:rgba(255,255,255,.24);backdrop-filter:blur(6px);color:#fff;font-size:34px;font-weight:1000;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 14px 30px rgba(0,0,0,.28);
+}
+.vipVideoControls{position:relative;z-index:2;display:flex;gap:8px;justify-content:center;padding:10px 4px 2px}
+.vipVideoCtrl{
+  border:0;border-radius:999px;padding:10px 13px;background:rgba(255,255,255,.94);color:#274653;
+  font-size:12px;font-weight:1000;cursor:pointer;box-shadow:0 8px 18px rgba(0,0,0,.14);
+}
+.vipVideoSection{margin:14px 0 4px;padding:10px;border-radius:26px;background:linear-gradient(135deg,#d3a158,#fff7dd,#b9802e);box-shadow:0 16px 34px rgba(39,70,83,.14);border:1px solid rgba(201,161,95,.36)}
+.vipVideoSection.hidden{display:none!important}
+.vipVideoCardInner{background:rgba(255,255,255,.78);border-radius:21px;padding:10px;border:1px solid rgba(255,255,255,.65)}
+.vipVideoCardTitle{margin:0 0 9px;text-align:center;color:#274653;font-size:14px;font-weight:1000}
+.vipVideoSmallFrame{width:100%;aspect-ratio:16/9;border-radius:17px;overflow:hidden;background:#0f172a}
+.vipVideoSmallFrame iframe{width:100%;height:100%;border:0;display:block}
+.vipVideoBottomControls{display:flex;justify-content:center;gap:8px;margin-top:10px}
+@keyframes vipVideoFade{from{opacity:0}to{opacity:1}}
+.vipVideoFallback{margin-top:9px;text-align:center;font-size:12px;font-weight:1000;color:#274653;line-height:1.7}
+.vipVideoFallback button,.vipVideoFallback a{display:inline-flex;align-items:center;justify-content:center;margin-top:7px;border:0;border-radius:999px;padding:9px 12px;background:linear-gradient(135deg,#274653,#c9a15f);color:#fff;text-decoration:none;font-weight:1000;cursor:pointer}
+
+
+/* إصلاح الفيديو: كل أدوات الصوت وملء الشاشة داخل مشغل YouTube فقط */
+.vipVideoFallback,.vipVideoControls,.vipVideoBottomControls,.vipBigPlay{display:none!important}
+.vipVideoFrameWrap iframe,.vipVideoSmallFrame iframe{background:#000}
+</style>
+
 </head>
 <body>
+<!-- 🎬 VIP intro video popup -->
+
+<!-- ملاحظة: التشغيل التلقائي بالصوت تمنعه متصفحات الجوال، لذلك يبدأ الفيديو تلقائيًا بدون صوت ويمكن تشغيل الصوت من داخل مشغل YouTube. -->
+<div id="vipVideoPopup" class="vipVideoPopup hidden" aria-label="فيديو تعريفي لمسار الأعداد">
+  <div class="vipVideoShell">
+    <div class="vipVideoHeader">
+      <div class="vipVideoTitle">🎬 فيديو مسار الأعداد</div>
+      <button class="vipVideoClose" type="button" id="vipVideoCloseBtn" aria-label="إغلاق الفيديو">×</button>
+    </div>
+    <div class="vipVideoFrameWrap">
+      <iframe id="vipVideoPopupFrame" title="فيديو مسار الأعداد"
+        data-src="https://www.youtube.com/embed/zDGytI1q7VA?autoplay=1&mute=1&enablejsapi=1&origin=https%3A%2F%2Fas-soso-as2011-design.github.io&widget_referrer=https%3A%2F%2Fas-soso-as2011-design.github.io%2FSetup-path%2F&controls=1&playsinline=1&rel=0&modestbranding=1&iv_load_policy=3&vq=hd1080&hd=1"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+    </div>
+  </div>
+</div>
+
 <div class="app">
 
   
@@ -1350,6 +1423,18 @@ html[dir="ltr"] th,html[dir="ltr"] td{text-align:center}
           <div style="font-size:15px;color:#6b7280;margin-bottom:10px;font-weight:1000">عداد انتهاء التسجيل في المسابقة</div>
           <div id="countdownTimer" style="font-size:30px;color:#274653;font-weight:1000;letter-spacing:1px">00 : 00 : 00 : 00</div>
           <div id="countdownNote" style="margin-top:10px;font-size:13px;color:#8a6a61;font-weight:900">الأيام : الساعات : الدقائق : الثواني</div>
+          <!-- 🎥 VIP video card after popup closes -->
+          <div id="vipVideoSection" class="vipVideoSection hidden">
+            <div class="vipVideoCardInner">
+              <div class="vipVideoCardTitle">🎬 فيديو تعريفي بمسابقة مسار الأعداد</div>
+              <div class="vipVideoSmallFrame">
+                <iframe id="vipVideoCardFrame" title="فيديو مسار الأعداد"
+                  data-src="https://www.youtube.com/embed/zDGytI1q7VA?autoplay=0&mute=0&enablejsapi=1&origin=https%3A%2F%2Fas-soso-as2011-design.github.io&widget_referrer=https%3A%2F%2Fas-soso-as2011-design.github.io%2FSetup-path%2F&controls=1&playsinline=1&rel=0&modestbranding=1&iv_load_policy=3&vq=hd1080&hd=1"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>
@@ -1712,7 +1797,7 @@ html[dir="ltr"] th,html[dir="ltr"] td{text-align:center}
 <div class="card adminHidden" id="adminRegisterCard">
   <div class="sectionTitle" style="font-size:20px">التسجيل</div>
   <div class="sectionSub">إضافة حساب جديد للهيئة التعليمية أو الإدارية.</div>
-  <div class="field"><label for="registerName">الاسم</label><input id="registerName" class="input"></div>
+  <div class="field"><label for="registerName">الاسم</label><select id="registerName" class="input"><option value="">اختاري الاسم من طاقم المدرسة</option></select></div>
   <div class="field">
     <label for="registerType">نوع التسجيل</label>
     <select id="registerType" class="input">
@@ -5132,6 +5217,382 @@ document.addEventListener('click', function(e){
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', init); else init();
   window.addEventListener('load', function(){ setTimeout(function(){ cleanFormState(); renderVipAccountsPane(); }, 800); });
   window.renderVipAccountsPane = renderVipAccountsPane;
+})();
+</script>
+
+
+<script id="staff-secure-vip-script">
+(function(){
+  'use strict';
+  const MANAGE_FIXED_PASS = '2030Rowad';
+  const staffNamesRaw = [
+    'أ. جواهر الجوهر','أ. حسناء المطيري','أ. أروى الجوهر','أ. اميمة الكليب','أ. أمل العيسى','أ. اسماء العنزي','أ. شمسة الشهري','أ. عالية الحربي','أ. هدى السبيعي','أ. آمنة الدوسري','أ. أروى الشمراني','أ. سمية السبيعي','أ. سارة حقوي','أ. نوال القحطاني','أ. مزيونة السبيعي','أ. بسمة العمري','أ. وجدان البقمي','أ. مرام الزهراني','أ. خلود المبرزي','أ. خضراء المالكي ( أم آلاء)','أ. نادية الغامدي','أ. بدرية الجوهر','أ. خضراء المالكي ( أم شهد )','أ. اسماء العمير','أ. عنود حكمي','أ. خلود القحطاني','أ. زهرة الرزقي','أ. خديجة الشهري','أ. سمر عبدالعزيز','أ. رباب الثبيتي','أ. أشواق الحربي','أ. مريم العثمان','أ. بشرى الطويل','أ. رغد الشمري','أ. المها الخميس','أ. وضحى الدوسري','أ. بدور الهاجري','أ. هاجر الشلوي','أ. ميعاد الخالدي','أ. ريم القوس','أ. مي المحيفظ','أ. سارة القحطاني','أ. رهف','أ. بتول ( أم راكان )','أ. وجدان بالحارث','أ. أمجاد الشعيب','أ. نور الزريق','أ. سارة الحسينان','أ. نجلا القحطاني','أ. نوف الشهراني','أ. شقراء محبوب','أ. سارة الشهراني','أ. منار المالكي'
+  ];
+  const staffNames = [...new Set(staffNamesRaw.map(s=>String(s).replace(/^ا\./,'أ.').replace(/أ\.(\S)/,'أ. $1').replace(/\s+/g,' ').trim()))]
+    .sort((a,b)=>a.localeCompare(b,'ar'));
+
+  function el(sel){ return document.querySelector(sel); }
+  function els(sel){ return Array.from(document.querySelectorAll(sel)); }
+  function alertVip(title, text){
+    if(typeof window.showFancyAlert === 'function'){
+      try{ window.showFancyAlert(title, text || ''); return; }catch(e){}
+    }
+    alert((title||'') + (text ? '\n' + text : ''));
+  }
+  function clearManageFields(){
+    ['manageUser','managePass'].forEach(id=>{ const x=document.getElementById(id); if(x) x.value=''; });
+  }
+  function fillStaffSelect(){
+    let field = el('#registerName');
+    if(!field) return;
+    if(field.tagName !== 'SELECT'){
+      const select = document.createElement('select');
+      select.id = field.id;
+      select.className = field.className || 'input';
+      select.setAttribute('autocomplete','off');
+      field.replaceWith(select);
+      field = select;
+    }
+    field.innerHTML = '<option value="">اختاري الاسم من طاقم المدرسة</option>' + staffNames.map(n=>`<option value="${n.replace(/"/g,'&quot;')}">${n}</option>`).join('');
+    const card = field.closest('.card');
+    if(card && !card.querySelector('.staffSecureNotice')){
+      const note = document.createElement('div');
+      note.className='staffSecureNotice';
+      note.textContent='لا يمكن إنشاء حساب إلا باختيار اسم من قائمة طاقم المدرسة المعتمدة.';
+      const msg = document.getElementById('registerMsg');
+      if(msg) msg.parentNode.insertBefore(note, msg);
+      else card.appendChild(note);
+    }
+  }
+  function isAllowedStaffName(name){ return staffNames.includes(String(name||'').trim()); }
+
+  function ensureManagePasswordModal(){
+    if(document.getElementById('managePasswordModalVip')) return;
+    const style=document.createElement('style');
+    style.id='manage-password-vip-style';
+    style.textContent=`
+      .managePassOverlay{position:fixed;inset:0;background:rgba(24,30,37,.48);backdrop-filter:blur(7px);display:none;align-items:center;justify-content:center;z-index:16000;padding:18px;}
+      .managePassOverlay.active{display:flex;}
+      .managePassCard{width:min(390px,92vw);background:linear-gradient(180deg,#fffdf9,#f8f2ea);border:1px solid rgba(201,161,95,.32);border-radius:30px;box-shadow:0 26px 70px rgba(39,70,83,.24);padding:22px 18px 18px;position:relative;overflow:hidden;text-align:center;}
+      .managePassCard:before{content:"";position:absolute;top:0;left:0;right:0;height:7px;background:linear-gradient(135deg,#274653,#c9a15f);}
+      .managePassClose{position:absolute;top:12px;left:12px;width:36px;height:36px;border:0;border-radius:13px;background:linear-gradient(135deg,#f6eee4,#ead7c2);color:#6a5451;font-size:22px;font-weight:1000;cursor:pointer;}
+      .managePassIcon{width:64px;height:64px;margin:8px auto 12px;border-radius:22px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,rgba(86,126,134,.14),rgba(201,161,95,.22));font-size:30px;color:#274653;}
+      .managePassTitle{margin:0 0 8px;color:#274653;font-size:23px;font-weight:1000;}
+      .managePassText{margin:0 0 14px;color:#6b7280;font-size:14px;font-weight:900;line-height:1.8;}
+      .managePassInput{width:100%;padding:15px 16px;border-radius:18px;border:1px solid rgba(39,70,83,.15);background:#fffdfa;font-size:16px;font-weight:900;outline:none;text-align:center;direction:ltr;letter-spacing:.5px;}
+      .managePassInput:focus{border-color:rgba(201,161,95,.55);box-shadow:0 0 0 4px rgba(201,161,95,.12);}
+      .managePassBtn{width:100%;margin-top:12px;border:0;border-radius:18px;padding:15px 16px;background:linear-gradient(135deg,#274653,#c9a15f);color:#fff;font-size:17px;font-weight:1000;cursor:pointer;box-shadow:0 14px 26px rgba(39,70,83,.18);}
+      .managePassMsg{min-height:24px;margin-top:10px;color:#991b1b;font-size:13px;font-weight:1000;line-height:1.7;}
+    `;
+    document.head.appendChild(style);
+    const modal=document.createElement('div');
+    modal.id='managePasswordModalVip';
+    modal.className='managePassOverlay';
+    modal.innerHTML=`
+      <div class="managePassCard" role="dialog" aria-modal="true" aria-label="الرقم السري لإدارة المسابقة">
+        <button type="button" class="managePassClose" id="managePassCloseBtn">×</button>
+        <div class="managePassIcon">🔐</div>
+        <h3 class="managePassTitle">دخول إدارة المسابقة</h3>
+        <p class="managePassText">أدخلي الرقم السري لفتح محتوى إدارة المسابقة.</p>
+        <input id="managePassVipInput" class="managePassInput" type="password" autocomplete="new-password" inputmode="text" placeholder="الرقم السري">
+        <button type="button" class="managePassBtn" id="managePassVipBtn">فتح الإدارة</button>
+        <div class="managePassMsg" id="managePassVipMsg"></div>
+      </div>`;
+    document.body.appendChild(modal);
+    const close=()=>{ modal.classList.remove('active'); const input=document.getElementById('managePassVipInput'); if(input) input.value=''; const msg=document.getElementById('managePassVipMsg'); if(msg) msg.textContent=''; };
+    document.getElementById('managePassCloseBtn')?.addEventListener('click', close);
+    modal.addEventListener('click', e=>{ if(e.target===modal) close(); });
+    document.getElementById('managePassVipBtn')?.addEventListener('click', tryUnlockManagePanel);
+    document.getElementById('managePassVipInput')?.addEventListener('keydown', e=>{ if(e.key==='Enter') tryUnlockManagePanel(); });
+  }
+
+  function openManagePasswordModal(){
+    ensureManagePasswordModal();
+    const modal=document.getElementById('managePasswordModalVip');
+    const input=document.getElementById('managePassVipInput');
+    const msg=document.getElementById('managePassVipMsg');
+    if(msg) msg.textContent='';
+    if(input) input.value='';
+    modal?.classList.add('active');
+    setTimeout(()=>input?.focus(),80);
+  }
+
+  function unlockManagePanel(){
+    if(typeof window.setAdminMode === 'function'){
+      try{ window.setAdminMode('manage'); }catch(e){}
+    }
+    const start = el('#adminManageStartCard');
+    const login = el('#manageLoginCard');
+    const panel = el('#manageExclusivePanel');
+    if(start) start.classList.remove('adminHidden');
+    if(login) login.classList.add('adminHidden');
+    if(panel) panel.classList.remove('adminHidden');
+    clearManageFields();
+    if(typeof window.setupManageExclusiveTabs === 'function') window.setupManageExclusiveTabs();
+    if(typeof window.renderAdminDataTables === 'function') window.renderAdminDataTables();
+    document.getElementById('managePasswordModalVip')?.classList.remove('active');
+    alertVip('تم فتح إدارة المسابقة ✅','');
+  }
+
+  function tryUnlockManagePanel(){
+    const input=document.getElementById('managePassVipInput');
+    const msg=document.getElementById('managePassVipMsg');
+    const pass=String(input?.value||'').trim();
+    if(pass !== MANAGE_FIXED_PASS){
+      if(msg) msg.textContent='الرقم السري غير صحيح ❌';
+      input?.focus();
+      return;
+    }
+    unlockManagePanel();
+  }
+
+  function showManagePanelAfterPassword(){
+    openManagePasswordModal();
+  }
+
+  window.masarOpenManagePassword = showManagePanelAfterPassword;
+  window.masarUnlockManagePanel = unlockManagePanel;
+
+  document.addEventListener('DOMContentLoaded', function(){
+    fillStaffSelect();
+    ensureManagePasswordModal();
+    document.querySelectorAll('.adminSwitchBtn[data-admin-mode="manage"]').forEach(function(btn){
+      btn.setAttribute('type','button');
+      btn.onclick=function(ev){ ev.preventDefault(); ev.stopPropagation(); showManagePanelAfterPassword(); return false; };
+    });
+    const msg = el('#manageLoginMsg');
+    if(msg) msg.textContent='اضغطي دخول إدارة المسابقة ثم أدخلي الرقم السري.';
+    const userField = el('#manageUser');
+    if(userField) userField.closest('.field')?.classList.add('adminHidden');
+    const passField = el('#managePass');
+    if(passField) passField.closest('.field')?.classList.add('adminHidden');
+  });
+
+  // منع أي تسجيل باسم خارج القائمة قبل وصول الحدث للكود القديم
+  document.addEventListener('click', function(ev){
+    const saveBtn = ev.target && ev.target.closest && ev.target.closest('#registerSaveBtn');
+    if(saveBtn){
+      fillStaffSelect();
+      const name = el('#registerName')?.value || '';
+      const msg = el('#registerMsg');
+      if(!isAllowedStaffName(name)){
+        ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation();
+        if(msg) msg.textContent='اختاري الاسم من قائمة طاقم المدرسة فقط.';
+        alertVip('غير مصرح ❌','يجب اختيار الاسم من القائمة المعتمدة.');
+        return false;
+      }
+    }
+
+    const manageSwitch = ev.target && ev.target.closest && ev.target.closest('.adminSwitchBtn[data-admin-mode="manage"]');
+    if(manageSwitch){
+      ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation();
+      showManagePanelAfterPassword();
+      return false;
+    }
+
+    const manageLogin = ev.target && ev.target.closest && ev.target.closest('#manageLoginBtn');
+    if(manageLogin){
+      ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation();
+      showManagePanelAfterPassword();
+      return false;
+    }
+  }, true);
+
+  // دعم لو تم استدعاء دالة التحقق القديمة
+  window.isValidManageLogin = function(user, pass){
+    return String(pass||'').trim() === MANAGE_FIXED_PASS;
+  };
+  window.MASAR_STAFF_NAMES = staffNames;
+})();
+</script>
+
+
+<!-- FIX: حماية زر إدارة المسابقة في الصفحة الرئيسية بكلمة مرور قبل فتح صفحة الإدارة -->
+<style id="home-manage-password-lock-style">
+.homeManageLockOverlay{
+  position:fixed;inset:0;z-index:16000;display:none;align-items:center;justify-content:center;
+  background:rgba(24,30,37,.46);backdrop-filter:blur(8px);padding:18px;
+}
+.homeManageLockOverlay.active{display:flex}
+.homeManageLockCard{
+  width:min(390px,94vw);border-radius:28px;padding:22px 18px 18px;position:relative;overflow:hidden;
+  background:linear-gradient(180deg,#fffdf9,#f8f2ea);border:1px solid rgba(201,161,95,.32);
+  box-shadow:0 26px 64px rgba(39,70,83,.24);text-align:center;
+}
+.homeManageLockCard:before{content:"";position:absolute;inset:0 auto auto 0;width:100%;height:6px;background:linear-gradient(135deg,#274653,#c9a15f)}
+.homeManageLockClose{position:absolute;top:12px;left:12px;width:36px;height:36px;border:0;border-radius:12px;background:linear-gradient(135deg,#f6eee4,#ead7c2);color:#6a5451;font-size:22px;font-weight:1000;cursor:pointer}
+.homeManageLockIcon{width:66px;height:66px;margin:8px auto 12px;border-radius:22px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,rgba(86,126,134,.14),rgba(201,161,95,.24));font-size:30px;color:#274653}
+.homeManageLockTitle{margin:0 0 7px;color:#274653;font-size:22px;font-weight:1000}
+.homeManageLockSub{margin:0 0 14px;color:#6b7280;line-height:1.8;font-size:13px;font-weight:900}
+.homeManageLockInput{width:100%;border:1px solid rgba(39,70,83,.12);border-radius:18px;background:#fff;padding:15px 14px;font-size:18px;text-align:center;outline:none;font-weight:900;letter-spacing:.5px;color:#274653}
+.homeManageLockInput:focus{border-color:rgba(201,161,95,.55);box-shadow:0 0 0 4px rgba(201,161,95,.12)}
+.homeManageLockBtn{width:100%;margin-top:12px;border:0;border-radius:18px;padding:14px 14px;font-size:16px;font-weight:1000;color:#fff;background:linear-gradient(135deg,#274653,#567e86,#c9a15f);box-shadow:0 14px 26px rgba(39,70,83,.20);cursor:pointer}
+.homeManageLockMsg{min-height:24px;margin-top:10px;color:#991b1b;font-size:13px;font-weight:1000;line-height:1.7}
+</style>
+<script id="home-manage-password-lock-script">
+(function(){
+  'use strict';
+  const HOME_MANAGE_PASS = '2030Rowad';
+  function qs(s){return document.querySelector(s)}
+  function qsa(s){return Array.from(document.querySelectorAll(s))}
+  function ensureModal(){
+    if(qs('#homeManageLockOverlay')) return;
+    const modal=document.createElement('div');
+    modal.id='homeManageLockOverlay';
+    modal.className='homeManageLockOverlay';
+    modal.innerHTML=`
+      <div class="homeManageLockCard" role="dialog" aria-modal="true" aria-label="رقم سري إدارة المسابقة">
+        <button class="homeManageLockClose" type="button" id="homeManageLockClose">×</button>
+        <div class="homeManageLockIcon">🔐</div>
+        <h3 class="homeManageLockTitle">دخول إدارة المسابقة</h3>
+        <p class="homeManageLockSub">أدخلي الرقم السري لفتح إدارة المسابقة.</p>
+        <input id="homeManageLockInput" class="homeManageLockInput" type="password" autocomplete="off" placeholder="الرقم السري">
+        <button id="homeManageLockBtn" class="homeManageLockBtn" type="button">فتح الإدارة</button>
+        <div id="homeManageLockMsg" class="homeManageLockMsg"></div>
+      </div>`;
+    document.body.appendChild(modal);
+    function close(){
+      modal.classList.remove('active');
+      const input=qs('#homeManageLockInput');
+      const msg=qs('#homeManageLockMsg');
+      if(input) input.value='';
+      if(msg) msg.textContent='';
+    }
+    function unlock(){
+      const input=qs('#homeManageLockInput');
+      const msg=qs('#homeManageLockMsg');
+      const pass=String(input && input.value || '').trim();
+      if(pass !== HOME_MANAGE_PASS){
+        if(msg) msg.textContent='الرقم السري غير صحيح ❌';
+        if(input) input.focus();
+        return;
+      }
+      close();
+      try{ if(typeof window.showPage === 'function') window.showPage('adminPage'); }catch(e){}
+      setTimeout(function(){
+        try{ if(typeof window.setAdminMode === 'function') window.setAdminMode('manage'); }catch(e){}
+        try{ if(typeof window.masarUnlockManagePanel === 'function') window.masarUnlockManagePanel(); }catch(e){}
+        const start=qs('#adminManageStartCard'), login=qs('#manageLoginCard'), panel=qs('#manageExclusivePanel');
+        if(start) start.classList.remove('adminHidden');
+        if(login) login.classList.add('adminHidden');
+        if(panel) panel.classList.remove('adminHidden');
+        try{ if(typeof window.setupManageExclusiveTabs === 'function') window.setupManageExclusiveTabs(); }catch(e){}
+        try{ if(typeof window.renderAdminDataTables === 'function') window.renderAdminDataTables(); }catch(e){}
+      },80);
+    }
+    qs('#homeManageLockClose')?.addEventListener('click', close);
+    modal.addEventListener('click', function(e){ if(e.target===modal) close(); });
+    qs('#homeManageLockBtn')?.addEventListener('click', unlock);
+    qs('#homeManageLockInput')?.addEventListener('keydown', function(e){ if(e.key==='Enter') unlock(); });
+  }
+  function openModal(){
+    ensureModal();
+    const modal=qs('#homeManageLockOverlay');
+    const input=qs('#homeManageLockInput');
+    const msg=qs('#homeManageLockMsg');
+    if(msg) msg.textContent='';
+    if(input) input.value='';
+    modal && modal.classList.add('active');
+    setTimeout(function(){input && input.focus();},80);
+  }
+  window.openHomeManagePassword = openModal;
+  function interceptHeroButton(){
+    const btn=qs('#goAdminHero');
+    if(!btn) return;
+    btn.setAttribute('type','button');
+    btn.onclick=function(ev){ if(ev){ev.preventDefault(); ev.stopPropagation();} openModal(); return false; };
+    if(btn.dataset.homeManageLocked==='1') return;
+    btn.dataset.homeManageLocked='1';
+    btn.addEventListener('click', function(ev){
+      ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation(); openModal(); return false;
+    }, true);
+  }
+  document.addEventListener('DOMContentLoaded', function(){ ensureModal(); interceptHeroButton(); });
+  window.addEventListener('load', function(){ ensureModal(); interceptHeroButton(); setTimeout(interceptHeroButton,500); });
+})();
+</script>
+
+
+<script id="vip-youtube-video-script">
+(function(){
+  var VIDEO_CLOSED_KEY = 'masar_vip_intro_video_closed_v1';
+  var muted = true;
+  function el(id){return document.getElementById(id)}
+  function ytCommand(frame, func, args){
+    try{
+      if(frame && frame.contentWindow){
+        frame.contentWindow.postMessage(JSON.stringify({event:'command',func:func,args:args||[]}),'*');
+      }
+    }catch(e){}
+  }
+  function loadFrame(frame){
+    if(frame && !frame.getAttribute('src')) frame.setAttribute('src', frame.getAttribute('data-src') || '');
+  }
+  function showCard(){
+    var section = el('vipVideoSection');
+    var cardFrame = el('vipVideoCardFrame');
+    if(section) section.classList.remove('hidden');
+    loadFrame(cardFrame);
+  }
+  function openPopupOnce(){
+    var popup = el('vipVideoPopup');
+    var popupFrame = el('vipVideoPopupFrame');
+    if(!popup) return;
+    if(localStorage.getItem(VIDEO_CLOSED_KEY) === '1'){
+      popup.classList.add('hidden');
+      showCard();
+      return;
+    }
+    loadFrame(popupFrame);
+    popup.classList.remove('hidden');
+  }
+  window.closeVIPIntroVideo = function(){
+    var popup = el('vipVideoPopup');
+    var popupFrame = el('vipVideoPopupFrame');
+    localStorage.setItem(VIDEO_CLOSED_KEY,'1');
+    if(popup) popup.classList.add('hidden');
+    if(popupFrame) popupFrame.setAttribute('src','');
+    showCard();
+  };
+  function togglePopupPlay(){
+    var frame = el('vipVideoPopupFrame');
+    ytCommand(frame,'playVideo');
+  }
+  function togglePopupMute(){
+    var frame = el('vipVideoPopupFrame');
+    muted = !muted;
+    ytCommand(frame, muted ? 'mute' : 'unMute');
+    var btn = el('vipVideoMuteBtn');
+    if(btn) btn.textContent = muted ? '🔇 الصوت' : '🔊 الصوت';
+  }
+  function toggleCardMute(){
+    var frame = el('vipVideoCardFrame');
+    muted = !muted;
+    ytCommand(frame, muted ? 'mute' : 'unMute');
+    var btn = el('vipVideoCardMuteBtn');
+    if(btn) btn.textContent = muted ? '🔇 الصوت' : '🔊 الصوت';
+  }
+  function fullscreenWrap(selector){
+    var node = document.querySelector(selector);
+    if(!node) return;
+    if(node.requestFullscreen) node.requestFullscreen();
+    else if(node.webkitRequestFullscreen) node.webkitRequestFullscreen();
+  }
+
+  window.vipReloadPopupVideo = function(){
+    var f = el('vipVideoPopupFrame');
+    if(f){ f.setAttribute('src',''); setTimeout(function(){ f.setAttribute('src', f.getAttribute('data-src') || ''); },80); }
+  };
+  window.vipReloadCardVideo = function(){
+    var f = el('vipVideoCardFrame');
+    if(f){ f.setAttribute('src',''); setTimeout(function(){ f.setAttribute('src', f.getAttribute('data-src') || ''); },80); }
+  };
+  function bindVIPVideo(){
+    el('vipVideoCloseBtn')?.addEventListener('click', window.closeVIPIntroVideo);
+    openPopupOnce();
+  }
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bindVIPVideo);
+  else bindVIPVideo();
 })();
 </script>
 
