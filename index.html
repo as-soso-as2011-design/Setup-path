@@ -1621,6 +1621,7 @@ html[dir="ltr"] th,html[dir="ltr"] td{text-align:center}
           <li>الالتزام بالوقت المحدد وعدم الاستعانة بأي وسيلة غير مصرح بها.</li>
         </ul>
       </div>
+
       <div class="instructionCard">
         <div class="stageLiveBox"><div class="stageLiveLabel">عداد المرحلة الأولى</div><div id="stage1LiveTimer" class="stageLiveTimer">لم تبدأ المرحلة بعد</div></div>
         <div id="stage1CountdownBanner" class="countdownStatusBanner">انتهت فترة المرحلة الأولى</div>
@@ -1638,6 +1639,51 @@ html[dir="ltr"] th,html[dir="ltr"] td{text-align:center}
             <tbody id="stage1TableBody"><tr><td>يحدد لاحقًا</td><td>—</td><td>—</td></tr></tbody>
           </table>
         </div>
+        <div id="stage1DetailedInfo" style="margin-top:14px">
+        <h3 class="instructionTitle">✨ المرحلة الأولى: انطلاقة المسار</h3>
+        <div class="infoBlock" style="background:linear-gradient(180deg,#fffdf8,#fbf7ef);border:1px solid rgba(201,149,75,.25);box-shadow:0 12px 24px rgba(39,70,83,.07)">
+          <p style="margin:0 0 12px;color:#4b5563;font-weight:900;line-height:2">تُعد المرحلة الأولى بوابة الدخول للمسابقة، ويتم فيها قياس مهارة العدّ التصاعدي لدى المتسابق/ة وفق الزمن المحدد لكل صف، مع مراعاة الدقة والتركيز والالتزام بتعليمات لجنة التحكيم.</p>
+          <div style="display:grid;gap:10px;margin-top:10px">
+            <div style="padding:12px;border-radius:16px;background:#fff;border:1px solid rgba(0,0,0,.06)">
+              <strong>🧠 آلية التنفيذ</strong>
+              <ul style="margin:8px 0 0;padding:0 20px 0 0;line-height:2;color:#4b5563;font-weight:900">
+                <li>يكون العدّ <b>تصاعديًا</b> من البداية وفق تعليمات لجنة التحكيم.</li>
+                <li>تستمر المتسابقة حتى الوصول إلى العدد المطلوب حسب الصف.</li>
+                <li>يجب الالتزام بالزمن المحدد لكل صف دراسي.</li>
+                <li>في حال التوقف يُحتسب الأداء حسب ما وصلت إليه المتسابقة.</li>
+              </ul>
+            </div>
+            <div style="padding:12px;border-radius:16px;background:#fff;border:1px solid rgba(0,0,0,.06)">
+              <strong>🎯 آلية التحدي حسب الصف</strong>
+              <ul style="margin:8px 0 0;padding:0 20px 0 0;line-height:2;color:#4b5563;font-weight:900">
+                <li>🔹 الصف الأول الابتدائي: العدّ تصاعديًا إلى <b>50</b> خلال <b>دقيقة واحدة</b>.</li>
+                <li>🔹 الصف الثاني الابتدائي: العدّ تصاعديًا إلى <b>100</b> خلال <b>دقيقتين</b>.</li>
+                <li>🔹 الصف الثالث الابتدائي: العدّ تصاعديًا إلى <b>150</b> خلال <b>3 دقائق</b>.</li>
+                <li>🔹 الصف الأول المتوسط: العدّ تصاعديًا إلى <b>300</b> خلال <b>4 دقائق</b>.</li>
+              </ul>
+            </div>
+            <div style="padding:12px;border-radius:16px;background:#fff;border:1px solid rgba(0,0,0,.06)">
+              <strong>🏆 معايير الترشيح</strong>
+              <ul style="margin:8px 0 0;padding:0 20px 0 0;line-height:2;color:#4b5563;font-weight:900">
+                <li>✔️ دقة العدّ دون أخطاء مؤثرة.</li>
+                <li>✔️ الالتزام بالوقت المحدد.</li>
+                <li>✔️ الاستمرارية وعدم التوقف المتكرر.</li>
+                <li>✔️ التركيز والالتزام بتوجيهات لجنة التحكيم.</li>
+              </ul>
+            </div>
+            <div style="padding:12px;border-radius:16px;background:linear-gradient(135deg,#fff7ed,#fff);border:1px solid rgba(217,119,6,.22)">
+              <strong style="color:#b45309">⚠️ نظام التنبيهات عند الخطأ</strong>
+              <ul style="margin:8px 0 0;padding:0 20px 0 0;line-height:2;color:#7c2d12;font-weight:900">
+                <li>عند حدوث خطأ في العدّ قبل انتهاء الوقت يتم تنبيه المتسابق/ة.</li>
+                <li>يُسمح بـ <b>3 فرص تنبيه فقط</b> أثناء أداء المرحلة.</li>
+                <li>❌ عند الخطأ للمرة الرابعة لا يُحتسب المتسابق/ة مرشحًا للمرحلة التالية.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
       </div>
     </div>
   </section>
@@ -1740,7 +1786,51 @@ html[dir="ltr"] th,html[dir="ltr"] td{text-align:center}
       </div>
 
       <div id="mechanismPane" class="infoPane">
-        <div class="infoBlock"><div class="phaseTitle">المرحلة الأولى: انطلاقة المسار</div>يبدأ التحدي بعدّ الأرقام غيبًا وفق توجيه لجنة التحكيم، في اختبار أولي لسرعة التركيز ودقة الأداء.</div>
+        <div class="infoBlock" style="background:linear-gradient(180deg,#fffdf8,#fbf7ef);border:1px solid rgba(201,149,75,.25);box-shadow:0 12px 24px rgba(39,70,83,.07)">
+          <div class="phaseTitle">✨ المرحلة الأولى: انطلاقة المسار</div>
+          <p style="margin:0 0 12px;color:#4b5563;font-weight:900;line-height:2">تُعد المرحلة الأولى بوابة الدخول للمسابقة، ويتم فيها قياس مهارة العدّ التصاعدي لدى المتسابق/ة وفق الزمن المحدد لكل صف، مع مراعاة الدقة والتركيز والالتزام بتعليمات لجنة التحكيم.</p>
+
+          <div style="display:grid;gap:10px;margin-top:10px">
+            <div style="padding:12px;border-radius:16px;background:#fff;border:1px solid rgba(0,0,0,.06)">
+              <strong>🧠 آلية التنفيذ</strong>
+              <ul style="margin:8px 0 0;padding:0 20px 0 0;line-height:2;color:#4b5563;font-weight:900">
+                <li>يكون العدّ <b>تصاعديًا</b> من البداية وفق تعليمات لجنة التحكيم.</li>
+                <li>تستمر المتسابقة حتى الوصول إلى العدد المطلوب حسب الصف.</li>
+                <li>يجب الالتزام بالزمن المحدد لكل صف دراسي.</li>
+                <li>في حال التوقف يُحتسب الأداء حسب ما وصلت إليه المتسابقة.</li>
+              </ul>
+            </div>
+
+            <div style="padding:12px;border-radius:16px;background:#fff;border:1px solid rgba(0,0,0,.06)">
+              <strong>🎯 آلية التحدي حسب الصف</strong>
+              <ul style="margin:8px 0 0;padding:0 20px 0 0;line-height:2;color:#4b5563;font-weight:900">
+                <li>🔹 الصف الأول الابتدائي: العدّ تصاعديًا إلى <b>50</b> خلال <b>دقيقة واحدة</b>.</li>
+                <li>🔹 الصف الثاني الابتدائي: العدّ تصاعديًا إلى <b>100</b> خلال <b>دقيقتين</b>.</li>
+                <li>🔹 الصف الثالث الابتدائي: العدّ تصاعديًا إلى <b>150</b> خلال <b>3 دقائق</b>.</li>
+                <li>🔹 الصف الأول المتوسط: العدّ تصاعديًا إلى <b>300</b> خلال <b>4 دقائق</b>.</li>
+              </ul>
+            </div>
+
+            <div style="padding:12px;border-radius:16px;background:#fff;border:1px solid rgba(0,0,0,.06)">
+              <strong>🏆 معايير الترشيح</strong>
+              <ul style="margin:8px 0 0;padding:0 20px 0 0;line-height:2;color:#4b5563;font-weight:900">
+                <li>✔️ دقة العدّ دون أخطاء مؤثرة.</li>
+                <li>✔️ الالتزام بالوقت المحدد.</li>
+                <li>✔️ الاستمرارية وعدم التوقف المتكرر.</li>
+                <li>✔️ التركيز والالتزام بتوجيهات لجنة التحكيم.</li>
+              </ul>
+            </div>
+
+            <div style="padding:12px;border-radius:16px;background:linear-gradient(135deg,#fff7ed,#fff);border:1px solid rgba(217,119,6,.22)">
+              <strong style="color:#b45309">⚠️ نظام التنبيهات عند الخطأ</strong>
+              <ul style="margin:8px 0 0;padding:0 20px 0 0;line-height:2;color:#7c2d12;font-weight:900">
+                <li>عند حدوث خطأ في العدّ قبل انتهاء الوقت يتم تنبيه المتسابق/ة.</li>
+                <li>يُسمح بـ <b>3 فرص تنبيه فقط</b> أثناء أداء المرحلة.</li>
+                <li>❌ عند الخطأ للمرة الرابعة لا يُحتسب المتسابق/ة مرشحًا للمرحلة التالية.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
         <div class="infoBlock"><div class="phaseTitle">المرحلة الثانية: عبور المسار</div>ينتقل المتسابق/ة لاستكمال العد من نقطة التوقف، في مرحلة تتطلب استمرارية الذهن وثبات الأداء تحت ضغط الوقت.</div>
         <div class="infoBlock"><div class="phaseTitle">المرحلة الثالثة: قمة المسار</div>يصل المتسابق/ة إلى المرحلة النهائية لإتمام العد الكامل، حيث يظهر التميز الحقيقي في الدقة والتركيز والانضباط الزمني.</div>
       </div>
