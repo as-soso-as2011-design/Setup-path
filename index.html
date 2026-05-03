@@ -1342,6 +1342,37 @@ html[dir="ltr"] th,html[dir="ltr"] td{text-align:center}
 .vipVideoFallback,.vipVideoControls,.vipVideoBottomControls,.vipBigPlay{display:none!important}
 .vipVideoFrameWrap iframe,.vipVideoSmallFrame iframe{background:#000}
 </style>
+
+<style id="vip-contestants-sort-style">
+/* ===== VIP ترتيب جدول المتسابقين حسب الصف ===== */
+.vipGradeSeparatorRow td{
+  background:linear-gradient(135deg,rgba(39,70,83,.95),rgba(86,126,134,.92),rgba(201,161,95,.88))!important;
+  color:#fff!important;
+  font-size:14px!important;
+  font-weight:1000!important;
+  text-align:center!important;
+  padding:12px 10px!important;
+  border-bottom:0!important;
+  letter-spacing:.2px;
+}
+.vipGradeSeparatorRow .vipGradeCount{
+  display:inline-flex;
+  margin-right:8px;
+  padding:4px 9px;
+  border-radius:999px;
+  background:rgba(255,255,255,.18);
+  color:#fff;
+  font-size:11px;
+  font-weight:1000;
+}
+.contestantsTable tbody tr:not(.vipGradeSeparatorRow){
+  background:#fff;
+}
+.contestantsTable tbody tr:not(.vipGradeSeparatorRow):nth-child(even){
+  background:#fffaf3;
+}
+</style>
+
 </head>
 <body>
 <!-- 🎬 VIP intro video popup -->
@@ -7174,13 +7205,6 @@ document.addEventListener('click', function(e){
 .stageList{display:grid;gap:8px;padding:0 12px 12px}.stageRow{display:grid;grid-template-columns:38px 1fr auto;gap:9px;align-items:center;border:1px solid #eef1f3;border-radius:18px;padding:10px;background:linear-gradient(180deg,#fff,#fffdf9)}.stageNum{width:32px;height:32px;border-radius:13px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,rgba(86,126,134,.10),rgba(201,161,95,.16));color:#274653;font-weight:1000}.stageTitle{font-size:13px;color:#475569;font-weight:1000;margin-bottom:2px}.stageValue{font-size:14px;color:#111827;font-weight:1000;line-height:1.6}
 .progressEmpty{padding:16px 14px;border-radius:24px;background:linear-gradient(135deg,#fff7ed,#fffdf9);border:1px solid rgba(201,161,95,.22);box-shadow:0 12px 28px rgba(39,70,83,.08);color:#274653;text-align:center;font-weight:1000;line-height:1.9}.progressEmpty.red{background:linear-gradient(135deg,#fef2f2,#fff7ed);border-color:rgba(153,27,27,.16);color:#7f1d1d}
 @media(max-width:520px){.progressSummaryGrid{grid-template-columns:1fr}.progressStudentTop{align-items:stretch;flex-direction:column;text-align:center}.progressName{white-space:normal}.nextStageBox{grid-template-columns:1fr;text-align:center}.stageRow{grid-template-columns:34px 1fr}.stageRow .progressPill{grid-column:1 / -1;justify-self:center;width:100%;max-width:220px}.progressLabels{font-size:9px}}
-
-/* تعديل نهائي: حذف صندوق المرحلة التالية وإبراز شريط التقدم */
-.nextStageBox,.mfiNext{display:none!important}
-.progressBarBox,.mfiProgressBox{padding:18px!important;border-radius:24px!important;background:linear-gradient(135deg,rgba(39,70,83,.10),rgba(201,161,95,.20))!important;border:1px solid rgba(201,161,95,.34)!important;box-shadow:0 12px 24px rgba(39,70,83,.10)!important}
-.progressTrack,.mfiTrack{height:26px!important;border-radius:999px!important;background:#eef1f3!important}
-.progressFill,.mfiFill{border-radius:999px!important;background:linear-gradient(135deg,#274653,#6da2a9,#c9a15f)!important}
-.progressBarTitle,.mfiProgressTitle{font-size:15px!important;font-weight:1000!important;color:#274653!important}
 </style>
 <script id="masar-inquiry-progress-final-script">
 (function(){
@@ -7212,7 +7236,7 @@ document.addEventListener('click', function(e){
   function card(r){
     var name=val(r,['name','studentName','fullName'],'بدون اسم'),grade=val(r,['grade','className','class','level'],'غير محدد'),c=calc(r),pct=Math.max(0,Math.min(100,(c.done/4)*100));
     var stages=row('1','المرحلة الأولى',stageVal(r,'stage1'))+row('2','المرحلة الثانية',stageVal(r,'stage2'))+row('3','المرحلة الثالثة',stageVal(r,'stage3'))+row('4','مرحلة الفوز',stageVal(r,'win'));
-    return '<div class="progressStudentCard"><div class="progressStudentTop"><div><div class="progressName">'+esc(name)+'</div><div class="progressGrade">الصف: '+esc(grade)+'</div></div>'+pill(c.status)+'</div><div class="progressBarBox"><div class="progressBarTitle"><span>شريط التقدم نحو الفوز</span><span>'+esc(c.remain)+'</span></div><div class="progressTrack"><div class="progressFill" style="width:'+pct+'%"></div></div><div class="progressLabels"><span>التسجيل</span><span>الأولى</span><span>الثانية</span><span>الثالثة</span><span>الفوز</span></div></div><div class="stageList">'+stages+'</div></div>';
+    return '<div class="progressStudentCard"><div class="progressStudentTop"><div><div class="progressName">'+esc(name)+'</div><div class="progressGrade">الصف: '+esc(grade)+'</div></div>'+pill(c.status)+'</div><div class="progressBarBox"><div class="progressBarTitle"><span>شريط التقدم نحو الفوز</span><span>'+esc(c.remain)+'</span></div><div class="progressTrack"><div class="progressFill" style="width:'+pct+'%"></div></div><div class="progressLabels"><span>التسجيل</span><span>الأولى</span><span>الثانية</span><span>الثالثة</span><span>الفوز</span></div></div><div class="nextStageBox"><div><div class="label">المرحلة التالية</div><div class="value">'+esc(c.next)+'</div></div>'+pill(c.next)+'</div><div class="stageList">'+stages+'</div></div>';
   }
   function render(){
     var phoneEl=$('statusPhone'),box=$('statusResult');if(!phoneEl||!box)return;var phone=clean(phoneEl.value);box.className='finalMasarProgressInquiry';
@@ -7221,7 +7245,7 @@ document.addEventListener('click', function(e){
     if(!matches.length){box.innerHTML='<div class="progressEmpty red">لا توجد بيانات مرتبطة بهذا الرقم.<br>تأكدي من الرقم ثم أعيدي الاستعلام.</div>';return}
     var active=matches.filter(function(r){return !isFail(calc(r).status)&&calc(r).status!=='ملغي'}).length;
     var nextText=matches.map(function(r){return calc(r).next}).filter(function(x){return x&&x!=='تم الوصول للفوز'&&x.indexOf('لم ينتقل')!==0&&x!=='تم إلغاء المتسابق'})[0]||'لا توجد مرحلة تالية نشطة';
-    box.innerHTML='<div class="progressInquiryWrap"><div class="progressInquiryHead"><div class="title">بطاقة الاستعلام الرسمية</div><div class="sub">شريط تقدم واضح نحو الفوز لكل متسابق/ة</div></div><div class="progressSummaryGrid"><div class="progressMiniBox"><div class="k">رقم ولي الأمر</div><div class="v">'+esc(phoneEl.value)+'</div></div><div class="progressMiniBox"><div class="k">عدد المتسابقين</div><div class="v">'+matches.length+' متسابق/ة</div></div><div class="progressMiniBox"><div class="k">نشط</div><div class="v">'+active+'</div></div><div class="progressMiniBox"><div class="k">التقدم</div><div class="v">نحو الفوز</div></div></div>'+matches.map(card).join('')+'</div>';
+    box.innerHTML='<div class="progressInquiryWrap"><div class="progressInquiryHead"><div class="title">بطاقة الاستعلام الرسمية</div><div class="sub"></div></div><div class="progressSummaryGrid"><div class="progressMiniBox"><div class="k">رقم ولي الأمر</div><div class="v">'+esc(phoneEl.value)+'</div></div><div class="progressMiniBox"><div class="k">عدد المتسابقين</div><div class="v">'+matches.length+' متسابق/ة</div></div><div class="progressMiniBox"><div class="k">نشط</div><div class="v">'+active+'</div></div><div class="progressMiniBox"><div class="k">المرحلة التالية</div><div class="v">'+esc(nextText)+'</div></div></div>'+matches.map(card).join('')+'</div>';
   }
   function bind(){
     var btn=$('checkStatusBtn');if(btn){btn.addEventListener('click',function(e){e.preventDefault();e.stopImmediatePropagation();render();return false},true);btn.onclick=function(e){if(e){e.preventDefault();e.stopImmediatePropagation()}render();return false}}
@@ -7234,83 +7258,206 @@ document.addEventListener('click', function(e){
 </script>
 
 
-<!-- ===== إصلاح نهائي مؤكد لواجهة الاستعلام: بدون إعلام + شريط تقدم بارز ===== -->
-<style id="masar-inquiry-definitive-style">
-#statusResult.masarFinalInquiry{border:0!important;background:transparent!important;padding:0!important;box-shadow:none!important;min-height:auto!important;overflow:visible!important;color:#274653!important}
-.mfiWrap{border-radius:30px;overflow:hidden;background:linear-gradient(180deg,#fffdf9 0%,#fff8ef 100%);border:1px solid rgba(201,161,95,.28);box-shadow:0 22px 46px rgba(39,70,83,.13)}
-.mfiHead{padding:18px 14px;background:linear-gradient(135deg,#274653 0%,#567e86 52%,#c9a15f 100%);color:#fff;text-align:center;position:relative;overflow:hidden}
-.mfiHead:after{content:"";position:absolute;top:0;left:-120%;width:42%;height:100%;background:rgba(255,255,255,.18);transform:skewX(-24deg);animation:vipSweep 5s linear infinite;pointer-events:none}
-.mfiTitle{font-size:21px;font-weight:1000;line-height:1.7;color:#fff}.mfiSub{font-size:12px;font-weight:900;line-height:1.8;color:rgba(255,255,255,.92)}
-.mfiSummary{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;padding:12px;background:rgba(255,255,255,.65)}
-.mfiMini{border-radius:18px;background:#fff;border:1px solid rgba(0,0,0,.06);padding:11px 8px;text-align:center;box-shadow:0 8px 18px rgba(39,70,83,.05)}
-.mfiMini .k{font-size:11px;color:#6b7280;font-weight:1000;margin-bottom:5px}.mfiMini .v{font-size:15px;color:#274653;font-weight:1000;line-height:1.6}
-.mfiStudent{margin:12px;border-radius:25px;background:#fff;border:1px solid rgba(0,0,0,.08);overflow:hidden;box-shadow:0 14px 28px rgba(39,70,83,.08)}
-.mfiStudentTop{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px;background:linear-gradient(135deg,#f7eee4,#fffaf3);border-bottom:1px solid rgba(0,0,0,.06)}
-.mfiName{min-width:0;color:#274653;font-size:16px;font-weight:1000;line-height:1.6;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mfiGrade{color:#6b7280;font-size:12px;font-weight:1000;margin-top:2px}
-.mfiPill{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-width:104px;padding:8px 12px;border-radius:999px;font-size:12px;font-weight:1000;border:1px solid transparent;white-space:nowrap;line-height:1.5}.mfiPill .dot{width:8px;height:8px;border-radius:50%;background:currentColor;display:inline-block}.mfiGreen{background:#ecfdf3;color:#166534;border-color:#bbf7d0}.mfiYellow{background:#fff7ed;color:#9a5b00;border-color:#fed7aa}.mfiRed{background:#fef2f2;color:#991b1b;border-color:#fecaca}.mfiBlue{background:#eff6ff;color:#1e3a8a;border-color:#bfdbfe}.mfiGray{background:#f8fafc;color:#475569;border-color:#e2e8f0}
-.mfiProgressBox{margin:12px;padding:15px;border-radius:22px;background:linear-gradient(135deg,rgba(39,70,83,.07),rgba(201,161,95,.16));border:1px solid rgba(201,161,95,.24)}
-.mfiProgressTitle{display:flex;align-items:center;justify-content:space-between;gap:8px;color:#274653;font-weight:1000;font-size:14px;margin-bottom:10px}.mfiProgressTitle span:last-child{color:#9a5b00;font-size:13px}
-.mfiTrack{height:20px;border-radius:999px;background:#eef1f3;overflow:hidden;border:1px solid rgba(0,0,0,.07);box-shadow:inset 0 2px 6px rgba(0,0,0,.07)}
-.mfiFill{height:100%;border-radius:999px;background:linear-gradient(135deg,#274653,#6da2a9,#c9a15f);box-shadow:0 7px 16px rgba(39,70,83,.20);transition:width .35s ease}
-.mfiLabels{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-top:9px;color:#6b7280;font-size:9px;font-weight:1000;text-align:center}.mfiLabels span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.mfiNext{margin:0 12px 12px;padding:14px;border-radius:21px;background:#fff;border:1px solid rgba(0,0,0,.06);display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;box-shadow:0 8px 16px rgba(39,70,83,.04)}
-.mfiNext .label{color:#6b7280;font-size:12px;font-weight:1000}.mfiNext .value{color:#274653;font-size:17px;font-weight:1000;line-height:1.7}
-.mfiStages{display:grid;gap:8px;padding:0 12px 12px}.mfiStage{display:grid;grid-template-columns:40px 1fr auto;gap:9px;align-items:center;border:1px solid #eef1f3;border-radius:18px;padding:11px 10px;background:linear-gradient(180deg,#fff,#fffdf9)}
-.mfiNum{width:34px;height:34px;border-radius:13px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,rgba(86,126,134,.10),rgba(201,161,95,.16));color:#274653;font-weight:1000}.mfiStageTitle{font-size:13px;color:#475569;font-weight:1000;margin-bottom:3px}.mfiStageValue{font-size:14px;color:#111827;font-weight:1000;line-height:1.6}
-.mfiEmpty{padding:16px 14px;border-radius:24px;background:linear-gradient(135deg,#fff7ed,#fffdf9);border:1px solid rgba(201,161,95,.22);box-shadow:0 12px 28px rgba(39,70,83,.08);color:#274653;text-align:center;font-weight:1000;line-height:1.9}.mfiEmpty.red{background:linear-gradient(135deg,#fef2f2,#fff7ed);border-color:rgba(153,27,27,.16);color:#7f1d1d}
-@media(max-width:520px){.mfiSummary{grid-template-columns:1fr}.mfiStudentTop{align-items:stretch;flex-direction:column;text-align:center}.mfiName{white-space:normal}.mfiNext{grid-template-columns:1fr;text-align:center}.mfiStage{grid-template-columns:36px 1fr}.mfiStage .mfiPill{grid-column:1/-1;justify-self:center;width:100%;max-width:230px}.mfiLabels{font-size:8px}}
+
+<!-- ===== إصلاح نهائي فعلي: استعلام مسار الأعداد + رسائل متعددة في مربع واحد ===== -->
+<style id="masar-final-multi-popup-clean-style">
+  .masarUltimateInquiry{border:0!important;background:transparent!important;padding:0!important;color:#274653!important;line-height:1.8!important;font-weight:900!important}
+  .masarUltimateWrap{border-radius:28px;overflow:hidden;background:linear-gradient(180deg,#fffdf9,#fff7ed);border:1px solid rgba(201,161,95,.25);box-shadow:0 18px 38px rgba(39,70,83,.12)}
+  .masarUltimateHeader{padding:16px 14px;text-align:center;color:#fff;background:linear-gradient(135deg,#274653,#567e86,#c9a15f);position:relative;overflow:hidden}
+  .masarUltimateHeader:after{content:"";position:absolute;top:0;left:-120%;width:45%;height:100%;background:rgba(255,255,255,.20);transform:skewX(-24deg);animation:masarSweep 4.6s infinite;pointer-events:none}
+  @keyframes masarSweep{0%{left:-120%}100%{left:160%}}
+  .masarUltimateHeader .title{font-size:20px;font-weight:1000;margin:0;line-height:1.7}.masarUltimateHeader .sub{font-size:12px;font-weight:900;color:rgba(255,255,255,.90);margin-top:4px}
+  .masarUltimateSummary{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;padding:12px;background:linear-gradient(135deg,rgba(247,238,228,.85),rgba(255,253,249,.9))}
+  .masarUltimateMini{border:1px solid rgba(0,0,0,.06);background:#fff;border-radius:18px;padding:10px 7px;text-align:center}.masarUltimateMini .k{font-size:11px;color:#6b7280;font-weight:1000;margin-bottom:5px}.masarUltimateMini .v{font-size:15px;color:#274653;font-weight:1000;line-height:1.6}
+  .masarStudentProgress{margin:12px;border-radius:24px;background:#fff;border:1px solid rgba(0,0,0,.08);overflow:hidden;box-shadow:0 12px 24px rgba(39,70,83,.08)}
+  .masarStudentTop{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px;background:linear-gradient(135deg,#f7eee4,#fffaf3);border-bottom:1px solid rgba(0,0,0,.06)}
+  .masarStudentName{font-size:17px;color:#274653;font-weight:1000;line-height:1.6}.masarStudentGrade{font-size:12px;color:#6b7280;font-weight:1000;margin-top:2px}.masarStatusPill{display:inline-flex;align-items:center;gap:7px;border-radius:999px;padding:7px 12px;font-size:12px;font-weight:1000;border:1px solid transparent;white-space:nowrap}.masarStatusPill:before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor}.masarOk{background:#ecfdf3;color:#166534;border-color:#bbf7d0}.masarWait{background:#fff7ed;color:#9a5b00;border-color:#fed7aa}.masarBad{background:#fef2f2;color:#991b1b;border-color:#fecaca}.masarInfo{background:#eff6ff;color:#1e3a8a;border-color:#bfdbfe}
+  .masarProgressArea{padding:15px 14px;background:linear-gradient(180deg,#fff,#fffdf8)}.masarProgressTitle{display:flex;justify-content:space-between;gap:10px;align-items:center;color:#274653;font-size:14px;font-weight:1000;margin-bottom:10px}.masarProgressTitle span:last-child{font-size:12px;color:#6b7280;font-weight:900}.masarTrack{height:20px;background:#edf2f4;border-radius:999px;overflow:hidden;border:1px solid rgba(39,70,83,.08);box-shadow:inset 0 2px 5px rgba(0,0,0,.07)}.masarFill{height:100%;border-radius:999px;background:linear-gradient(135deg,#2f6f73,#c9a15f);transition:width .55s ease}.masarLabels{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:9px}.masarLabels span{text-align:center;color:#6b7280;font-size:10px;font-weight:900}.masarRemain{margin-top:12px;padding:11px 12px;border-radius:16px;background:linear-gradient(135deg,rgba(86,126,134,.09),rgba(201,161,95,.15));border:1px solid rgba(201,161,95,.20);color:#274653;font-size:13px;font-weight:1000;text-align:center;line-height:1.8}
+  .masarCleanData{display:grid;gap:8px;padding:0 14px 14px}.masarDataRow{display:flex;justify-content:space-between;align-items:center;gap:10px;border:1px solid #eef1f3;border-radius:17px;padding:11px 12px;background:linear-gradient(180deg,#fff,#fffdf9)}.masarDataRow .label{color:#475569;font-size:13px;font-weight:1000}.masarDataRow .value{color:#111827;font-size:14px;font-weight:1000;text-align:left;line-height:1.6}
+  .masarEmptyUltimate{padding:16px 14px;border-radius:23px;background:linear-gradient(135deg,#fff7ed,#fffdf9);border:1px solid rgba(201,161,95,.22);box-shadow:0 12px 28px rgba(39,70,83,.08);color:#274653;text-align:center;font-weight:1000;line-height:1.9}.masarEmptyUltimate.red{background:linear-gradient(135deg,#fef2f2,#fff7ed);border-color:rgba(153,27,27,.16);color:#7f1d1d}
+  .masarMultiOverlay{position:fixed;inset:0;background:rgba(24,30,37,.50);backdrop-filter:blur(7px);display:flex;align-items:center;justify-content:center;z-index:30000;padding:18px}.masarMultiCard{width:min(430px,94vw);max-height:86vh;overflow:auto;border-radius:30px;background:linear-gradient(180deg,#fffdf9,#fff7ed);border:1px solid rgba(201,161,95,.32);box-shadow:0 28px 75px rgba(39,70,83,.30);position:relative}.masarMultiTop{height:8px;background:linear-gradient(135deg,#274653,#c9a15f)}.masarMultiBody{padding:20px 16px 17px;text-align:center}.masarMultiClose{position:absolute;top:13px;left:13px;width:36px;height:36px;border:0;border-radius:13px;background:linear-gradient(135deg,#f6eee4,#ead7c2);color:#6a5451;font-size:22px;font-weight:1000;cursor:pointer}.masarMultiIcon{width:68px;height:68px;border-radius:23px;display:flex;align-items:center;justify-content:center;margin:0 auto 10px;background:linear-gradient(135deg,rgba(86,126,134,.12),rgba(201,161,95,.22));font-size:32px}.masarMultiTitle{margin:0 0 12px;color:#274653;font-size:22px;font-weight:1000}.masarMsgBlock{border:1px solid rgba(0,0,0,.07);background:#fff;border-radius:18px;padding:12px;margin-top:10px;text-align:right}.masarMsgName{color:#274653;font-size:15px;font-weight:1000;margin-bottom:6px}.masarMsgText{color:#4b5563;font-size:14px;font-weight:900;line-height:1.9}.masarMultiBtn{margin-top:15px;width:100%;border:0;border-radius:18px;padding:14px 18px;background:linear-gradient(135deg,#274653,#c9a15f);color:#fff;font-size:16px;font-weight:1000;cursor:pointer}
+  @media(max-width:520px){.masarUltimateSummary{grid-template-columns:1fr}.masarStudentTop{flex-direction:column;text-align:center}.masarDataRow{flex-direction:column;text-align:center}.masarDataRow .value{text-align:center}.masarLabels span{font-size:9px}}
 </style>
-<script id="masar-inquiry-definitive-script">
+<script id="masar-final-multi-popup-clean-script">
 (function(){
   function $(id){return document.getElementById(id)}
-  function esc(s){return String(s==null?'':s).replace(/[&<>\"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c]})}
-  function clean(s){var x=String(s||'').replace(/\D/g,''); if(x.indexOf('966')===0) x='0'+x.slice(3); return x.trim()}
-  function readRecords(){try{if(typeof getRecords==='function'){var a=getRecords()||[]; if(Array.isArray(a)&&a.length)return a}}catch(e){} var keys=['masar_mobile_records','records','contestants','students','mathPathRecords','masarRecords']; for(var i=0;i<keys.length;i++){try{var v=JSON.parse(localStorage.getItem(keys[i])||'[]'); if(Array.isArray(v)&&v.length)return v}catch(e){}} return []}
-  function val(r,keys,fallback){for(var i=0;i<keys.length;i++){var v=r&&r[keys[i]]; if(v!==undefined&&v!==null&&String(v).trim()!=='') return String(v).trim()} return fallback||'لم يبدأ'}
-  function entered(r,k){var m=(r&&r.resultEnteredStages)||{}; if(m[k])return true; if(k==='stage1')return !!(r&&r.stageOneEntered); if(k==='stage2')return !!(r&&r.stageTwoEntered); if(k==='stage3')return !!(r&&r.stageThreeEntered); if(k==='win')return !!(r&&r.winStageEntered); return false}
-  function norm(t){t=String(t||'').trim(); if(!t)return'لم يبدأ'; if(/غير فائز/.test(t))return'لم يبدأ'; return t}
-  function stageVal(r,k){var v='لم يبدأ'; if(k==='reg')v='مسجل'; if(k==='stage1')v=val(r,['stageOne','nomination','phase1'],'لم يبدأ'); if(k==='stage2')v=entered(r,'stage2')?val(r,['stageTwo','sorting','phase2'],'لم يبدأ'):val(r,['stageTwo','sorting','phase2'],'لم يبدأ'); if(k==='stage3')v=entered(r,'stage3')?val(r,['stageThree','phase3'],'لم يبدأ'):val(r,['stageThree','phase3'],'لم يبدأ'); if(k==='win')v=entered(r,'win')?val(r,['winStage','winnerStage','win'],'لم يبدأ'):'لم يبدأ'; return norm(v)}
-  function isFail(t){return /غير مرشح|غير مجتاز|غير متأهل|مستبعد|مرفوض|ملغي|إلغاء|محذوف/.test(String(t||''))}
-  function isPass(k,t){t=String(t||''); if(k==='reg')return /مسجل|نشط/.test(t); if(k==='stage1')return /مرشح|مجتاز|متأهل|فائز/.test(t)&&!isFail(t); if(k==='stage2')return /مجتاز|متأهل|فائز/.test(t)&&!isFail(t); if(k==='stage3')return /متأهل|فائز/.test(t)&&!isFail(t); if(k==='win')return /فائز/.test(t)&&!isFail(t); return false}
-  function cls(text){var t=String(text||''); if(isFail(t))return'mfiRed'; if(/فائز|مرشح|مجتاز|متأهل|مسجل|نشط|تم/.test(t)&&!/لم|غير/.test(t))return'mfiGreen'; if(/لم يبدأ|انتظار|بانتظار|قيد|لا يوجد/.test(t))return'mfiYellow'; return'mfiBlue'}
-  function pill(text){var t=String(text||'لم يبدأ'); return '<span class="mfiPill '+cls(t)+'"><span class="dot"></span>'+esc(t)+'</span>'}
-  function calc(r){
-    if(r&&r.cancelled)return{status:'ملغي',next:'تم إلغاء المتسابق',done:0,remain:'توقفت المشاركة'};
-    var s1=stageVal(r,'stage1'),s2=stageVal(r,'stage2'),s3=stageVal(r,'stage3'),win=stageVal(r,'win');
-    if(isFail(s1))return{status:s1,next:'لم ينتقل للمرحلة الثانية',done:0,remain:'توقفت عند المرحلة الأولى'};
-    if(isFail(s2))return{status:s2,next:'لم ينتقل للمرحلة الثالثة',done:1,remain:'توقفت عند المرحلة الثانية'};
-    if(isFail(s3))return{status:s3,next:'لم ينتقل لمرحلة الفوز',done:2,remain:'توقفت عند المرحلة الثالثة'};
-    if(isPass('win',win))return{status:'فائز',next:'تم الوصول للفوز',done:4,remain:'اكتمل المسار'};
-    if(isPass('stage3',s3))return{status:s3,next:'مرحلة الفوز',done:3,remain:'تبقى خطوة واحدة على الفوز'};
-    if(isPass('stage2',s2))return{status:s2,next:'المرحلة الثالثة',done:2,remain:'تبقى خطوتان على الفوز'};
-    if(isPass('stage1',s1))return{status:s1,next:'المرحلة الثانية',done:1,remain:'تبقى 3 خطوات على الفوز'};
-    return{status:'مسجل',next:'المرحلة الأولى',done:0,remain:'تبقى 4 خطوات على الفوز'};
+  function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+  function clean(s){return String(s||'').replace(/\D/g,'').replace(/^966/,'0').trim()}
+  function getData(){try{if(typeof getRecords==='function'){var a=getRecords();if(Array.isArray(a))return a}}catch(e){}var keys=['masar_mobile_records','records','contestants','students','mathPathRecords','masarRecords'];for(var i=0;i<keys.length;i++){try{var v=JSON.parse(localStorage.getItem(keys[i])||'[]');if(Array.isArray(v)&&v.length)return v}catch(e){}}return []}
+  function val(r,keys,fb){for(var i=0;i<keys.length;i++){var v=r&&r[keys[i]];if(v!==undefined&&v!==null&&String(v).trim()!=='')return String(v).trim()}return fb||'لم يبدأ'}
+  function entered(r,k){var m=(r&&r.resultEnteredStages)||{};if(m[k])return true;if(k==='stage1')return!!(r&&r.stageOneEntered);if(k==='stage2')return!!(r&&r.stageTwoEntered);if(k==='stage3')return!!(r&&r.stageThreeEntered);if(k==='win')return!!(r&&r.winStageEntered);return false}
+  function stage(r,k){if(k==='stage1')return val(r,['stageOne','nomination','phase1'],'لم يبدأ');if(k==='stage2')return val(r,['stageTwo','sorting','phase2'],'لم يبدأ');if(k==='stage3')return val(r,['stageThree','phase3'],'لم يبدأ');if(k==='win'){if(!entered(r,'win'))return 'لم يبدأ';return val(r,['winStage','winnerStage','win'],'لم يبدأ')}return 'لم يبدأ'}
+  function pass(t){t=String(t||'');return /فائز|مرشح|مجتاز|متأهل|مقبول|تم/.test(t)&&!/غير|لم|بانتظار|قيد/.test(t)}
+  function fail(t){return /غير|لم يتم اجتياز|لم يجتز|مستبعد|مرفوض|ملغي/.test(String(t||''))}
+  function pillCls(t){if(fail(t))return'masarBad';if(pass(t))return'masarOk';if(/انتظار|بانتظار|قيد|لم يبدأ|لم يبد|لا يوجد/.test(String(t||'')))return'masarWait';return'masarInfo'}
+  function pill(t){return '<span class="masarStatusPill '+pillCls(t)+'">'+esc(t||'لم يبدأ')+'</span>'}
+  function progress(r){var p=0,stopped=false,s1=stage(r,'stage1'),s2=stage(r,'stage2'),s3=stage(r,'stage3'),w=stage(r,'win');if(pass(s1))p=1;if(pass(s2))p=2;if(pass(s3))p=3;if(w==='فائز')p=4;if(fail(s1)||fail(s2)||fail(s3)||fail(w))stopped=true;var remain=Math.max(0,4-p);return{p:p,percent:(p/4*100),text:stopped?'توقف المسار لهذه المرحلة، ونشكر مشاركتك وجهدك.':(remain===0?'اكتمل المسار وتم الوصول للفوز.':'تبقى '+remain+' خطوة نحو الفوز')}}
+  function overall(r){if(r&&r.cancelled)return'ملغي';var w=stage(r,'win'),s3=stage(r,'stage3'),s2=stage(r,'stage2'),s1=stage(r,'stage1');if(w==='فائز')return'فائز';if(fail(s3)||pass(s3))return s3;if(fail(s2)||pass(s2))return s2;if(fail(s1)||pass(s1))return s1;return 'قيد المعالجة'}
+  function message(r){var name=val(r,['name','studentName','fullName'],'المتسابق/ة'),s1=stage(r,'stage1'),s2=stage(r,'stage2'),s3=stage(r,'stage3'),w=stage(r,'win'),text='نتائجك قيد المعالجة، سيتم تحديث حالتك قريبًا',icon='⏳';if(w==='فائز'){icon='🏆';text='ألف مبروك! تم تحقيق الفوز في مسار الأعداد، فخرٌ لنا هذا الإنجاز'}else if(fail(s3)){icon='🌟';text='الوصول لهذه المرحلة إنجاز بحد ذاته، لم يتم التأهل النهائي…'}else if(pass(s3)){icon='🎯';text='وصلت للنخبة! المرحلة النهائية بانتظارك، كل التوفيق لك'}else if(fail(s2)){icon='💪';text='وصلت للمرحلة الثانية وهذا إنجاز، لم يتم الاجتياز هذه المرة… لكن القادم أفضل'}else if(pass(s2)){icon='✨';text='خطوة جديدة نحو القمة! تم اجتياز المرحلة الثانية بنجاح.'}else if(fail(s1)){icon='🌱';text='لم يتم اجتياز المرحلة الأولى هذه المرة، لكن المحاولة بداية النجاح… ننتظر تألقك القادم'}else if(pass(s1)){icon='✨';text='نبارك لك! تم ترشيحك في المرحلة الأولى، وأنت الآن على أعتاب المرحلة الثانية… كن/كوني مستعدًا للانطلاق'}return{name:name,text:text,icon:icon}}
+  function showPopup(records){var old=$('masarMultiPopupFinal');if(old)old.remove();var msgs=records.map(message);var icon=msgs.some(function(m){return m.icon==='🏆'})?'🏆':'✨';var blocks=msgs.map(function(m){return '<div class="masarMsgBlock"><div class="masarMsgName">👤 '+esc(m.name)+'</div><div class="masarMsgText">'+esc(m.icon+' '+m.text)+'</div></div>'}).join('');var html='<div class="masarMultiOverlay" id="masarMultiPopupFinal"><div class="masarMultiCard"><button class="masarMultiClose" type="button">×</button><div class="masarMultiTop"></div><div class="masarMultiBody"><div class="masarMultiIcon">'+esc(icon)+'</div><h3 class="masarMultiTitle">نتائج الاستعلام</h3>'+blocks+'<button class="masarMultiBtn" type="button">موافق</button></div></div></div>';document.body.insertAdjacentHTML('beforeend',html);var ov=$('masarMultiPopupFinal');function close(){if(ov)ov.remove()}ov.querySelector('.masarMultiBtn').onclick=close;ov.querySelector('.masarMultiClose').onclick=close;ov.addEventListener('click',function(e){if(e.target===ov)close()})}
+  function row(l,v){return '<div class="masarDataRow"><div class="label">'+esc(l)+'</div><div class="value">'+esc(v)+'</div></div>'}
+  function card(r){var name=val(r,['name','studentName','fullName'],'بدون اسم'),grade=val(r,['grade','className','class','level'],'غير محدد'),st=overall(r),pr=progress(r);return '<div class="masarStudentProgress"><div class="masarStudentTop"><div><div class="masarStudentName">👤 '+esc(name)+'</div><div class="masarStudentGrade">الصف: '+esc(grade)+'</div></div>'+pill(st)+'</div><div class="masarProgressArea"><div class="masarProgressTitle"><span>شريط التقدم نحو الفوز</span><span>'+pr.p+' من 4</span></div><div class="masarTrack"><div class="masarFill" style="width:'+pr.percent+'%"></div></div><div class="masarLabels"><span>الأولى</span><span>الثانية</span><span>الثالثة</span><span>الفوز</span></div><div class="masarRemain">'+esc(pr.text)+'</div></div><div class="masarCleanData">'+row('المرحلة الأولى',stage(r,'stage1'))+row('المرحلة الثانية',stage(r,'stage2'))+row('المرحلة الثالثة',stage(r,'stage3'))+row('مرحلة الفوز',stage(r,'win'))+'</div></div>'}
+  function render(){var phoneEl=$('statusPhone'),box=$('statusResult');if(!phoneEl||!box)return;var phone=clean(phoneEl.value);box.className='masarUltimateInquiry';if(!phone){box.innerHTML='<div class="masarEmptyUltimate">🟡 أدخلي رقم ولي الأمر أولًا ثم اضغطي تنفيذ الاستعلام.</div>';return}var matches=getData().filter(function(r){return clean(r&&(r.phone||r.parentPhone||r.statusPhone||r.parent_phone||r.guardianPhone))===phone});if(!matches.length){box.innerHTML='<div class="masarEmptyUltimate red">🔴 لا توجد بيانات مرتبطة بهذا الرقم.<br>تأكدي من الرقم ثم أعيدي الاستعلام.</div>';return}var winners=matches.filter(function(r){return stage(r,'win')==='فائز'}).length;box.innerHTML='<div class="masarUltimateWrap"><div class="masarUltimateHeader"><div class="title">📋 بطاقة الاستعلام الرسمية</div><div class="sub">بيانات المتسابقين المرتبطين برقم ولي الأمر</div></div><div class="masarUltimateSummary"><div class="masarUltimateMini"><div class="k">رقم ولي الأمر</div><div class="v">'+esc(phoneEl.value)+'</div></div><div class="masarUltimateMini"><div class="k">عدد المتسابقين</div><div class="v">'+matches.length+' متسابق/ة</div></div><div class="masarUltimateMini"><div class="k">وصل للفوز</div><div class="v">'+winners+'</div></div></div>'+matches.map(card).join('')+'</div>';showPopup(matches)}
+  function bind(){var btn=$('checkStatusBtn');if(btn){btn.onclick=function(e){if(e){e.preventDefault();e.stopPropagation();if(e.stopImmediatePropagation)e.stopImmediatePropagation()}render();return false};btn.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();if(e.stopImmediatePropagation)e.stopImmediatePropagation();render();return false},true)}var ph=$('statusPhone');if(ph&&!ph._masarFinalEnter){ph._masarFinalEnter=true;ph.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();render()}},true)}var box=$('statusResult');if(box){box.className='masarUltimateInquiry';box.innerHTML='<div class="masarEmptyUltimate">✨ سيظهر هنا شريط التقدم وبيانات المتسابقين بعد تنفيذ الاستعلام.</div>'}window.renderMasarVipInquiry=render;window.renderMasarFinalProgressInquiry=render}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);else bind();setTimeout(bind,300);setTimeout(bind,1200);setTimeout(bind,2500);
+})();
+</script>
+
+
+<script id="vip-contestants-sort-script">
+/* ===== ترتيب VIP لجدول المتسابقين حسب الصف ثم الاسم ===== */
+(function(){
+  const GRADE_ORDER = {
+    "الأول الابتدائي": 1,
+    "اول ابتدائي": 1,
+    "أول ابتدائي": 1,
+    "الصف الأول": 1,
+    "الثاني الابتدائي": 2,
+    "ثاني ابتدائي": 2,
+    "الصف الثاني": 2,
+    "الثالث الابتدائي": 3,
+    "ثالث ابتدائي": 3,
+    "الصف الثالث": 3,
+    "الرابع الابتدائي": 4,
+    "رابع ابتدائي": 4,
+    "الخامس الابتدائي": 5,
+    "خامس ابتدائي": 5,
+    "السادس الابتدائي": 6,
+    "سادس ابتدائي": 6,
+    "الأول المتوسط": 7,
+    "اول متوسط": 7,
+    "أول متوسط": 7,
+    "الثاني المتوسط": 8,
+    "ثاني متوسط": 8,
+    "الثالث المتوسط": 9,
+    "ثالث متوسط": 9,
+    "الأول الثانوي": 10,
+    "اول ثانوي": 10,
+    "أول ثانوي": 10,
+    "الثاني الثانوي": 11,
+    "ثاني ثانوي": 11,
+    "الثالث الثانوي": 12,
+    "ثالث ثانوي": 12
+  };
+
+  function cleanText(v){
+    return (v || "").toString().replace(/\s+/g, " ").trim();
   }
-  function stageRow(n,title,value){return '<div class="mfiStage"><div class="mfiNum">'+n+'</div><div><div class="mfiStageTitle">'+esc(title)+'</div><div class="mfiStageValue">'+esc(value)+'</div></div>'+pill(value)+'</div>'}
-  function studentCard(r){
-    var name=val(r,['name','studentName','fullName'],'بدون اسم'), grade=val(r,['grade','className','class','level'],'غير محدد');
-    var s1=stageVal(r,'stage1'),s2=stageVal(r,'stage2'),s3=stageVal(r,'stage3'),win=stageVal(r,'win'), c=calc(r), pct=Math.max(0,Math.min(100,(c.done/4)*100));
-    return '<div class="mfiStudent"><div class="mfiStudentTop"><div><div class="mfiName">'+esc(name)+'</div><div class="mfiGrade">الصف: '+esc(grade)+'</div></div>'+pill(c.status)+'</div><div class="mfiProgressBox"><div class="mfiProgressTitle"><span>شريط التقدم نحو الفوز</span><span>'+esc(c.remain)+'</span></div><div class="mfiTrack"><div class="mfiFill" style="width:'+pct+'%"></div></div><div class="mfiLabels"><span>تسجيل</span><span>الأولى</span><span>الثانية</span><span>الثالثة</span><span>الفوز</span></div></div><div class="mfiStages">'+stageRow('0','حالة التسجيل','مسجل')+stageRow('1','المرحلة الأولى',s1)+stageRow('2','المرحلة الثانية',s2)+stageRow('3','المرحلة الثالثة',s3)+stageRow('4','مرحلة الفوز',win)+'</div></div>';
+
+  function normalizeGrade(v){
+    const text = cleanText(v);
+    const withoutAl = text.replace(/^الصف\s+/, "").trim();
+    return withoutAl || text || "غير محدد";
   }
-  function render(){
-    var phoneEl=$('statusPhone'), box=$('statusResult'); if(!phoneEl||!box)return;
-    var phone=clean(phoneEl.value); box.className='masarFinalInquiry';
-    if(!phone){box.innerHTML='<div class="mfiEmpty">أدخلي رقم ولي الأمر أولًا ثم اضغطي تنفيذ الاستعلام.</div>';return}
-    var matches=readRecords().filter(function(r){return clean(r&&(r.phone||r.parentPhone||r.statusPhone||r.parent_phone||r.guardianPhone))===phone});
-    if(!matches.length){box.innerHTML='<div class="mfiEmpty red">لا توجد بيانات مرتبطة بهذا الرقم.<br>تأكدي من الرقم ثم أعيدي الاستعلام.</div>';return}
-    var nextCounts={}; matches.forEach(function(r){var n=calc(r).next; nextCounts[n]=(nextCounts[n]||0)+1});
-    var commonNext=Object.keys(nextCounts).sort(function(a,b){return nextCounts[b]-nextCounts[a]})[0]||'المرحلة الأولى';
-    box.innerHTML='<div class="mfiWrap"><div class="mfiHead"><div class="mfiTitle">بطاقة الاستعلام الرسمية</div><div class="mfiSub">شريط تقدم واضح نحو الفوز لكل متسابق/ة</div></div><div class="mfiSummary"><div class="mfiMini"><div class="k">رقم ولي الأمر</div><div class="v">'+esc(phoneEl.value)+'</div></div><div class="mfiMini"><div class="k">عدد المتسابقين</div><div class="v">'+matches.length+' متسابق/ة</div></div><div class="mfiMini"><div class="k">التقدم</div><div class="v">نحو الفوز</div></div><div class="mfiMini"><div class="k">الشريط</div><div class="v">ظاهر وواضح</div></div></div>'+matches.map(studentCard).join('')+'</div>';
+
+  function gradeRank(grade){
+    const g = normalizeGrade(grade);
+    if (GRADE_ORDER[g]) return GRADE_ORDER[g];
+
+    // محاولة ذكية لو الصيغة فيها رقم/مرحلة
+    if (/الأول|اول|أول/.test(g) && /ابتد/.test(g)) return 1;
+    if (/الثاني|ثاني/.test(g) && /ابتد/.test(g)) return 2;
+    if (/الثالث|ثالث/.test(g) && /ابتد/.test(g)) return 3;
+    if (/الرابع|رابع/.test(g)) return 4;
+    if (/الخامس|خامس/.test(g)) return 5;
+    if (/السادس|سادس/.test(g)) return 6;
+    if (/الأول|اول|أول/.test(g) && /متوسط/.test(g)) return 7;
+    if (/الثاني|ثاني/.test(g) && /متوسط/.test(g)) return 8;
+    if (/الثالث|ثالث/.test(g) && /متوسط/.test(g)) return 9;
+    if (/الأول|اول|أول/.test(g) && /ثانوي/.test(g)) return 10;
+    if (/الثاني|ثاني/.test(g) && /ثانوي/.test(g)) return 11;
+    if (/الثالث|ثالث/.test(g) && /ثانوي/.test(g)) return 12;
+    return 999;
   }
-  function bind(){
-    var btn=$('checkStatusBtn');
-    if(btn){var b=btn.cloneNode(true);btn.parentNode.replaceChild(b,btn);b.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();render();return false},true)}
-    var phone=$('statusPhone'); if(phone&&!phone._mfiFinal){phone._mfiFinal=true;phone.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();render()}},true)}
-    var box=$('statusResult'); if(box){box.className='masarFinalInquiry';box.innerHTML='<div class="mfiEmpty">سيظهر هنا استعلام فخم مرتب على استايل مسار الأعداد بعد إدخال رقم ولي الأمر.</div>'}
-    window.renderMasarVipInquiry=render;
+
+  function detectColumns(table){
+    const headers = Array.from(table.querySelectorAll("thead th")).map(th => cleanText(th.textContent));
+    let nameIndex = headers.findIndex(h => /الاسم|الطالب|الطالبة|المتسابق/.test(h));
+    let gradeIndex = headers.findIndex(h => /الصف|الفصل|المرحلة/.test(h));
+    if (nameIndex < 0) nameIndex = 0;
+    if (gradeIndex < 0) gradeIndex = 1;
+    return {nameIndex, gradeIndex};
   }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);else bind();
-  window.addEventListener('load',function(){bind();setTimeout(bind,500);setTimeout(bind,1500)});
+
+  function sortOneContestantsTable(table){
+    if (!table || table.dataset.vipSorted === "working") return;
+    const tbody = table.tBodies && table.tBodies[0];
+    if (!tbody) return;
+
+    const originalRows = Array.from(tbody.querySelectorAll("tr"))
+      .filter(tr => !tr.classList.contains("vipGradeSeparatorRow"));
+
+    if (originalRows.length < 2) return;
+
+    table.dataset.vipSorted = "working";
+    const colCount = Math.max(
+      Array.from(table.querySelectorAll("thead th")).length,
+      originalRows[0] ? originalRows[0].children.length : 1,
+      1
+    );
+    const {nameIndex, gradeIndex} = detectColumns(table);
+
+    const rows = originalRows.map((tr, originalIndex) => {
+      const cells = tr.children;
+      const name = cleanText(cells[nameIndex] ? cells[nameIndex].textContent : tr.textContent);
+      const grade = normalizeGrade(cells[gradeIndex] ? cells[gradeIndex].textContent : "");
+      return {tr, originalIndex, name, grade, rank: gradeRank(grade)};
+    });
+
+    rows.sort((a,b) => {
+      if (a.rank !== b.rank) return a.rank - b.rank;
+      const gradeCompare = a.grade.localeCompare(b.grade, "ar");
+      if (gradeCompare !== 0) return gradeCompare;
+      const nameCompare = a.name.localeCompare(b.name, "ar");
+      if (nameCompare !== 0) return nameCompare;
+      return a.originalIndex - b.originalIndex;
+    });
+
+    tbody.innerHTML = "";
+    let currentGrade = null;
+    rows.forEach(item => {
+      if (item.grade !== currentGrade) {
+        currentGrade = item.grade;
+        const count = rows.filter(r => r.grade === currentGrade).length;
+        const sep = document.createElement("tr");
+        sep.className = "vipGradeSeparatorRow";
+        sep.innerHTML = `<td colspan="${colCount}">🏫 ${currentGrade}<span class="vipGradeCount">${count} متسابق/ة</span></td>`;
+        tbody.appendChild(sep);
+      }
+      tbody.appendChild(item.tr);
+    });
+
+    table.dataset.vipSorted = "done";
+  }
+
+  function sortContestantsTables(){
+    const tables = Array.from(document.querySelectorAll("table.contestantsTable, .contestantsTable, table"));
+    tables.forEach(table => {
+      const text = cleanText(table.textContent);
+      if (/المتسابق|الطالب|الطالبة/.test(text) && /الصف|الفصل/.test(text)) {
+        sortOneContestantsTable(table);
+      }
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", function(){
+    setTimeout(sortContestantsTables, 400);
+    setTimeout(sortContestantsTables, 1200);
+    setTimeout(sortContestantsTables, 2500);
+
+    const observer = new MutationObserver(function(){
+      clearTimeout(window.__vipContestantsSortTimer);
+      window.__vipContestantsSortTimer = setTimeout(function(){
+        document.querySelectorAll("table").forEach(t => {
+          if (t.dataset.vipSorted === "done") delete t.dataset.vipSorted;
+        });
+        sortContestantsTables();
+      }, 250);
+    });
+    observer.observe(document.body, {childList:true, subtree:true});
+  });
+
+  window.vipSortContestantsTables = sortContestantsTables;
 })();
 </script>
 
@@ -8061,7 +8208,7 @@ document.addEventListener('click', function(e){
     var matches=readRecords().filter(function(r){return clean(r&&(r.phone||r.parentPhone||r.statusPhone||r.parent_phone||r.guardianPhone))===phone});
     if(!matches.length){box.innerHTML='<div class="masarInquiryEmpty clean red">🔴 لا توجد بيانات مرتبطة بهذا الرقم.<br>تأكدي من الرقم ثم أعيدي الاستعلام.</div>';return;}
     var active=matches.filter(function(r){return !/ملغي|مستبعد|محذوف|مرفوض/.test(overall(r))}).length;
-    box.innerHTML='<div class="masarInquiryHero cleanVip"><div class="masarInquiryTop"><div class="title">📋 بطاقة الاستعلام الرسمية</div><div class="sub">عرض مرتب بدون تكرار للمراحل والمؤشرات</div></div><div class="cleanSummaryGrid"><div class="cleanMiniBox"><div class="k">رقم ولي الأمر</div><div class="v">'+esc(phoneEl.value)+'</div></div><div class="cleanMiniBox"><div class="k">عدد المتسابقين</div><div class="v">'+matches.length+' متسابق/ة</div></div><div class="cleanMiniBox"><div class="k">نشط</div><div class="v">🟢 '+active+'</div></div><div class="cleanMiniBox"><div class="k">بحاجة متابعة</div><div class="v">🟡 '+(matches.length-active)+'</div></div></div>'+matches.map(card).join('')+'</div>';
+    box.innerHTML='<div class="masarInquiryHero cleanVip"><div class="masarInquiryTop"><div class="title">📋 بطاقة الاستعلام الرسمية</div><div class="sub"></div></div><div class="cleanSummaryGrid"><div class="cleanMiniBox"><div class="k">رقم ولي الأمر</div><div class="v">'+esc(phoneEl.value)+'</div></div><div class="cleanMiniBox"><div class="k">عدد المتسابقين</div><div class="v">'+matches.length+' متسابق/ة</div></div><div class="cleanMiniBox"><div class="k">نشط</div><div class="v">🟢 '+active+'</div></div><div class="cleanMiniBox"><div class="k">بحاجة متابعة</div><div class="v">🟡 '+(matches.length-active)+'</div></div></div>'+matches.map(card).join('')+'</div>';
   }
   function bind(){
     var btn=$('checkStatusBtn'); if(btn && !btn._cleanVipBound){btn._cleanVipBound=true;btn.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();render();return false},true)}
