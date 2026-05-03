@@ -4333,29 +4333,8 @@ document.addEventListener('click', function(e){
     el('mctrlSaveResultBtn')?.addEventListener('click', ()=>{
       const phone=clean(el('mctrlResultPhone').value); const data=rows(); const idx=data.findIndex(r=>clean(r.phone)===phone);
       if(idx===-1){ setMsg('mctrlResultMsg','حمّلي بيانات الطالب/ة أولًا أو تأكدي من رقم ولي الأمر.'); return; }
-      const s1=el('mctrlStageOne').value || 'لم يبدأ',
-            s2=el('mctrlStageTwo').value || 'لم يبدأ',
-            s3=el('mctrlStageThree').value || 'لم يبدأ',
-            win=el('mctrlWinStage').value || 'لم يبدأ';
-
-      const finalValue = (win==='فائز') ? 'فائز' : ((s3==='لم يبدأ' || s3==='غير متأهل') ? s3 : s3);
-      data[idx]=Object.assign({}, data[idx], {
-        stageOne:s1,
-        stageTwo:s2,
-        stageThree:s3,
-        winStage:win,
-        nomination:s1,
-        sorting:s2,
-        final:finalValue,
-        resultEnteredStages:{
-          stage1: s1 !== 'لم يبدأ',
-          stage2: s2 !== 'لم يبدأ',
-          stage3: s3 !== 'لم يبدأ',
-          win: win !== 'لم يبدأ'
-        },
-        resultNote:el('mctrlResultNote').value.trim(),
-        updatedAt:new Date().toLocaleString('ar-SA')
-      });
+      const s1=el('mctrlStageOne').value, s2=el('mctrlStageTwo').value, s3=el('mctrlStageThree').value, win=el('mctrlWinStage').value;
+      data[idx]=Object.assign({}, data[idx], {stageOne:s1,stageTwo:s2,stageThree:s3,winStage:win,nomination:s1,sorting:s2,final:win==='فائز'?'فائز':s3,resultNote:el('mctrlResultNote').value.trim(),updatedAt:new Date().toLocaleString('ar-SA')});
       saveRows(data); refresh(); setMsg('mctrlResultMsg','تم حفظ نتائج مراحل الطالب/ة بنجاح.');
     });
     all('.mNotifyParentBtn', card).forEach(btn=>btn.addEventListener('click', ()=>{
@@ -7491,63 +7470,79 @@ document.addEventListener('click', function(e){
 </script>
 
 
-<script id="stage-flow-fix-final">
-/* إصلاح تدفق المراحل: لا تنتقل الطالبة للتأهيل إلا بعد إدخال نتيجة كل مرحلة */
+<script id="stage-flow-final-force">
 (function(){
   function byId(id){return document.getElementById(id)}
-  function cleanPhone(v){return String(v||'').replace(/\D/g,'').replace(/^966/,'0')}
-  function normalizeRecord(r){
-    r = r || {};
-    if(!r.stageTwo || r.stageTwo === 'مجتاز' && !((r.resultEnteredStages||{}).stage2)) r.stageTwo = 'لم يبدأ';
-    if(!r.sorting || r.sorting === 'مجتاز' && !((r.resultEnteredStages||{}).stage2)) r.sorting = r.stageTwo;
-    if(!r.stageThree || r.stageThree === 'متأهل' && !((r.resultEnteredStages||{}).stage3)) r.stageThree = 'لم يبدأ';
-    if(!r.final || r.final === 'متأهل' && !((r.resultEnteredStages||{}).stage3)) r.final = r.stageThree;
-    if(!r.winStage || r.winStage === 'غير فائز') r.winStage = r.winStage || 'لم يبدأ';
-    return r;
+  function clean(v){return String(v||'').replace(/\D/g,'').replace(/^966/,'0')}
+  function readRows(){
+    try{ if(typeof getRecords==='function') return getRecords()||[]; }catch(e){}
+    try{return JSON.parse(localStorage.getItem('masar_mobile_records')||'[]')}catch(e){return[]}
   }
-  function safeRows(){
-    try{ if(typeof getRecords === 'function') return (getRecords()||[]).map(normalizeRecord); }catch(e){}
-    try{ return JSON.parse(localStorage.getItem('masar_mobile_records')||'[]').map(normalizeRecord); }catch(e){ return []; }
+  function writeRows(rows){
+    try{ if(typeof setRecords==='function') setRecords(rows); else localStorage.setItem('masar_mobile_records',JSON.stringify(rows)); }
+    catch(e){ try{localStorage.setItem('masar_mobile_records',JSON.stringify(rows));}catch(_){ } }
   }
-  function saveRowsFixed(rows){
-    try{ if(typeof setRecords === 'function') setRecords(rows); else localStorage.setItem('masar_mobile_records', JSON.stringify(rows)); }catch(e){
-      try{ localStorage.setItem('masar_mobile_records', JSON.stringify(rows)); }catch(_){}
-    }
+  function setOptions(id, opts){
+    var el=byId(id); if(!el) return;
+    var cur=el.value;
+    el.innerHTML=opts.map(function(o){return '<option>'+o+'</option>';}).join('');
+    el.value=opts.indexOf(cur)>=0 ? cur : opts[0];
   }
-  function ensureOptions(){
-    var defs = [
-      ['mctrlStageTwo',['لم يبدأ','مجتاز','غير مجتاز']],
-      ['mctrlStageThree',['لم يبدأ','متأهل','غير متأهل']],
-      ['mctrlWinStage',['لم يبدأ','فائز','غير فائز']]
-    ];
-    defs.forEach(function(x){
-      var el=byId(x[0]); if(!el) return;
-      var current=el.value || x[1][0];
-      el.innerHTML=x[1].map(function(v){return '<option>'+v+'</option>';}).join('');
-      el.value=x[1].indexOf(current)>=0 ? current : x[1][0];
+  function setupOptions(){
+    setOptions('mctrlStageTwo',['لم يبدأ','مجتاز','غير مجتاز']);
+    setOptions('mctrlStageThree',['لم يبدأ','متأهل','غير متأهل']);
+    setOptions('mctrlWinStage',['لم يبدأ','فائز','غير فائز']);
+  }
+  function normalizeExisting(){
+    var rows=readRows(), changed=false;
+    rows.forEach(function(r){
+      r.resultEnteredStages = r.resultEnteredStages || {};
+      if(!r.resultEnteredStages.stage2 && (r.stageTwo==='مجتاز' || r.sorting==='مجتاز')){
+        r.stageTwo='لم يبدأ'; r.sorting='لم يبدأ'; changed=true;
+      }
+      if(!r.resultEnteredStages.stage3 && (r.stageThree==='متأهل' || r.final==='متأهل')){
+        r.stageThree='لم يبدأ'; r.final='لم يبدأ'; changed=true;
+      }
+      if(!r.resultEnteredStages.win && (r.winStage==='غير فائز' || !r.winStage)){
+        r.winStage='لم يبدأ'; changed=true;
+      }
     });
+    if(changed) writeRows(rows);
   }
-  function loadStudent(){
-    ensureOptions();
-    var phone=cleanPhone(byId('mctrlResultPhone')&&byId('mctrlResultPhone').value);
-    var rows=safeRows();
-    var rec=rows.find(function(r){return cleanPhone(r.phone||r.parentPhone||r.statusPhone)===phone});
+  window.getContestantStage = function(rec){
+    rec=rec||{};
+    var entered=rec.resultEnteredStages||{};
+    var win=String(rec.winStage||'').trim();
+    var s3=String(rec.stageThree||rec.final||'').trim();
+    var s2=String(rec.stageTwo||rec.sorting||'').trim();
+    var s1=String(rec.stageOne||rec.nomination||'').trim();
+    if(entered.win && win==='فائز') return 'مرحلة الفوز';
+    if(entered.stage3 && s3 && s3!=='لم يبدأ' && s3!=='بانتظار النهائي') return 'المرحلة الثالثة';
+    if(entered.stage2 && s2 && s2!=='لم يبدأ' && s2!=='بانتظار الفرز') return 'المرحلة الثانية';
+    if(entered.stage1 && s1 && s1!=='لم يبدأ') return s1==='مرشح' ? 'المرحلة الثانية' : 'المرحلة الأولية';
+    return 'المرحلة الأولية';
+  };
+  function loadResult(){
+    setupOptions();
+    var phone=clean(byId('mctrlResultPhone')&&byId('mctrlResultPhone').value);
+    var rows=readRows();
+    var rec=rows.find(function(r){return clean(r.phone||r.parentPhone||r.statusPhone)===phone});
     var msg=byId('mctrlResultMsg');
     if(!rec){ if(msg) msg.textContent='لم يتم العثور على متسابق/ة بهذا الرقم.'; return; }
-    rec=normalizeRecord(rec);
+    rec.resultEnteredStages=rec.resultEnteredStages||{};
     if(byId('mctrlResultName')) byId('mctrlResultName').value=rec.name||rec.studentName||'';
     if(byId('mctrlStageOne')) byId('mctrlStageOne').value=rec.stageOne||rec.nomination||'مرشح';
-    if(byId('mctrlStageTwo')) byId('mctrlStageTwo').value=rec.stageTwo||rec.sorting||'لم يبدأ';
-    if(byId('mctrlStageThree')) byId('mctrlStageThree').value=rec.stageThree||rec.final||'لم يبدأ';
-    if(byId('mctrlWinStage')) byId('mctrlWinStage').value=rec.winStage||'لم يبدأ';
+    if(byId('mctrlStageTwo')) byId('mctrlStageTwo').value=rec.resultEnteredStages.stage2 ? (rec.stageTwo||rec.sorting||'لم يبدأ') : 'لم يبدأ';
+    if(byId('mctrlStageThree')) byId('mctrlStageThree').value=rec.resultEnteredStages.stage3 ? (rec.stageThree||rec.final||'لم يبدأ') : 'لم يبدأ';
+    if(byId('mctrlWinStage')) byId('mctrlWinStage').value=rec.resultEnteredStages.win ? (rec.winStage||'لم يبدأ') : 'لم يبدأ';
     if(byId('mctrlResultNote')) byId('mctrlResultNote').value=rec.resultNote||'';
     if(msg) msg.innerHTML='تم تحميل بيانات: <strong>'+(rec.name||rec.studentName||'')+'</strong>';
   }
   function saveResult(){
-    ensureOptions();
-    var phone=cleanPhone(byId('mctrlResultPhone')&&byId('mctrlResultPhone').value);
-    var rows=safeRows();
-    var idx=rows.findIndex(function(r){return cleanPhone(r.phone||r.parentPhone||r.statusPhone)===phone});
+    setupOptions();
+    var phone=clean(byId('mctrlResultPhone')&&byId('mctrlResultPhone').value);
+    var rows=readRows();
+    var idx=rows.findIndex(function(r){return clean(r.phone||r.parentPhone||r.statusPhone)===phone});
     var msg=byId('mctrlResultMsg');
     if(idx<0){ if(msg) msg.textContent='حمّلي بيانات الطالب/ة أولًا أو تأكدي من رقم ولي الأمر.'; return; }
 
@@ -7556,60 +7551,48 @@ document.addEventListener('click', function(e){
     var s3=(byId('mctrlStageThree')&&byId('mctrlStageThree').value)||'لم يبدأ';
     var win=(byId('mctrlWinStage')&&byId('mctrlWinStage').value)||'لم يبدأ';
 
-    // حماية الترتيب: إذا المرحلة السابقة لم تجتز، لا نفتح التي بعدها.
-    if(s1 !== 'مرشح'){ s2='لم يبدأ'; s3='لم يبدأ'; win='لم يبدأ'; }
-    if(s2 !== 'مجتاز'){ s3='لم يبدأ'; win='لم يبدأ'; }
-    if(s3 !== 'متأهل'){ win='لم يبدأ'; }
+    if(s1!=='مرشح'){ s2='لم يبدأ'; s3='لم يبدأ'; win='لم يبدأ'; }
+    if(s2!=='مجتاز'){ s3='لم يبدأ'; win='لم يبدأ'; }
+    if(s3!=='متأهل'){ win='لم يبدأ'; }
 
     rows[idx]=Object.assign({}, rows[idx], {
-      stageOne:s1,
-      nomination:s1,
-      stageTwo:s2,
-      sorting:s2,
-      stageThree:s3,
-      final:(win==='فائز')?'فائز':s3,
+      stageOne:s1, nomination:s1,
+      stageTwo:s2, sorting:s2,
+      stageThree:s3, final:(win==='فائز'?'فائز':s3),
       winStage:win,
-      resultEnteredStages:{
-        stage1: s1 !== 'لم يبدأ',
-        stage2: s2 !== 'لم يبدأ',
-        stage3: s3 !== 'لم يبدأ',
-        win: win !== 'لم يبدأ'
-      },
+      resultEnteredStages:{stage1:s1!=='لم يبدأ',stage2:s2!=='لم يبدأ',stage3:s3!=='لم يبدأ',win:win!=='لم يبدأ'},
       resultNote:(byId('mctrlResultNote')&&byId('mctrlResultNote').value.trim())||'',
       updatedAt:new Date().toLocaleString('ar-SA')
     });
-    saveRowsFixed(rows);
-    try{ if(typeof updateAdminViews==='function') updateAdminViews(); }catch(e){}
-    try{ if(typeof renderContestantsTable==='function') renderContestantsTable(); }catch(e){}
-    if(msg) msg.textContent='تم حفظ نتيجة المرحلة بالترتيب الصحيح دون نقل الطالب/ة لمرحلة غير مدخلة.';
+    writeRows(rows);
+    if(typeof renderTable==='function') try{renderTable()}catch(e){}
+    if(typeof renderContestantsTable==='function') try{renderContestantsTable()}catch(e){}
+    if(msg) msg.textContent='تم حفظ النتيجة بالترتيب الصحيح، ولم يتم نقل الطالب/ة لمرحلة غير مدخلة.';
   }
-  function patchButtons(){
-    ensureOptions();
+  function forceButtons(){
+    setupOptions();
+    normalizeExisting();
+
     var load=byId('mctrlLoadResultBtn');
+    if(load && load.dataset.finalForced!=='1'){
+      var nl=load.cloneNode(true);
+      nl.dataset.finalForced='1';
+      load.parentNode.replaceChild(nl,load);
+      nl.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();loadResult();return false;},true);
+    }
     var save=byId('mctrlSaveResultBtn');
-    if(load && !load.dataset.stageFlowFixed){
-      load.dataset.stageFlowFixed='1';
-      load.addEventListener('click', function(e){e.preventDefault(); e.stopImmediatePropagation(); loadStudent(); return false;}, true);
-    }
-    if(save && !save.dataset.stageFlowFixed){
-      save.dataset.stageFlowFixed='1';
-      save.addEventListener('click', function(e){e.preventDefault(); e.stopImmediatePropagation(); saveResult(); return false;}, true);
+    if(save && save.dataset.finalForced!=='1'){
+      var ns=save.cloneNode(true);
+      ns.dataset.finalForced='1';
+      save.parentNode.replaceChild(ns,save);
+      ns.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();saveResult();return false;},true);
     }
   }
-  function normalizeExistingOnce(){
-    var rows=safeRows();
-    var changed=false;
-    rows.forEach(function(r){
-      var before=JSON.stringify(r);
-      normalizeRecord(r);
-      if(JSON.stringify(r)!==before) changed=true;
-    });
-    if(changed) saveRowsFixed(rows);
-  }
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', function(){patchButtons(); normalizeExistingOnce();});
-  else {patchButtons(); normalizeExistingOnce();}
-  setTimeout(patchButtons,600);
-  setTimeout(patchButtons,1600);
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',forceButtons);
+  else forceButtons();
+  setTimeout(forceButtons,500);
+  setTimeout(forceButtons,1500);
+  setTimeout(forceButtons,3000);
 })();
 </script>
 
