@@ -1450,7 +1450,7 @@ html[dir="ltr"] th,html[dir="ltr"] td{text-align:center}
 <h2 class="vipPageTitle">بوابة تسجيل المتسابقين</h2>
 <p class="vipPageSub">واجهة مرتبة لتسجيل الطالب/ة وحفظ البيانات بأمان داخل سجلات المسابقة.</p>
 </div>
-<div class="registrationClosedBanner active" id="registerLockNotice">
+<div class="registrationClosedBanner" id="registerLockNotice">
 <strong>🔒 انتهت فترة التسجيل</strong>
           تم إغلاق بوابة التسجيل، ولا يمكن إضافة طلبات جديدة في الوقت الحالي.
         </div>
@@ -1899,7 +1899,7 @@ html[dir="ltr"] th,html[dir="ltr"] td{text-align:center}
 </div>
 <div class="mctrlPane active" id="mTabAddStudent">
 <div class="sectionTitle" style="font-size:18px">تسجيل طالب/ة</div>
-<div class="sectionSub">إضافة متسابق/ة جديد أو تحديث بياناته إذا كان رقم ولي الأمر مسجلًا مسبقًا.</div>
+<div class="sectionSub">إضافة متسابق/ة جديد، ويسمح بتسجيل الإخوة بنفس رقم ولي الأمر دون حذف أي طالب.</div>
 <div class="miniGrid">
 <div class="field"><label for="mctrlStudentName">اسم الطالب/ة الرباعي</label><input class="input" id="mctrlStudentName" placeholder="مثال: سارة محمد أحمد الحربي"/></div>
 <div class="field"><label for="mctrlStudentGrade">الصف</label>
@@ -2298,7 +2298,7 @@ html[dir="ltr"] th,html[dir="ltr"] td{text-align:center}
 </div>
 <div class="adminTabPane active" id="tabAddStudent">
 <div class="sectionTitle" style="font-size:18px">تسجيل طالب/ة</div>
-<div class="sectionSub">إضافة متسابق/ة جديد أو تحديث بياناته إذا كان رقم ولي الأمر مسجلًا مسبقًا.</div>
+<div class="sectionSub">إضافة متسابق/ة جديد، ويسمح بتسجيل الإخوة بنفس رقم ولي الأمر دون حذف أي طالب.</div>
 <div class="miniGrid">
 <div class="field"><label for="ctrlStudentName">اسم الطالب/ة الرباعي</label><input class="input" id="ctrlStudentName" placeholder="مثال: سارة محمد أحمد الحربي"/></div>
 <div class="field"><label for="ctrlStudentGrade">الصف</label>
@@ -3224,7 +3224,11 @@ q('#adminDeleteRecordBtn2')?.addEventListener('click', ()=>{
     if(phone.length < 9){ msg.textContent = 'أدخلي رقم ولي الأمر بشكل صحيح.'; return; }
 
     const rows = getRecords();
-    const idx = rows.findIndex(function(r){ return cleanPhone(r.phone) === phone; });
+    const idx = rows.findIndex(function(r){
+      return cleanPhone(r.phone) === phone &&
+             String(r.name || '').trim().replace(/\s+/g,' ') === name.replace(/\s+/g,' ') &&
+             String(r.grade || '').trim() === grade;
+    });
     const record = {
       name:name,
       grade:grade,
@@ -3698,10 +3702,20 @@ function formatStageRangeCountdown(startValue, endValue){
   if(state === 'ended') return '00 : 00 : 00 : 00';
   return formatRemainingText(endValue, 'تم انتهاء المرحلة');
 }
-const MASAR_REGISTRATION_CLOSED = true;
-window.MASAR_REGISTRATION_CLOSED = true;
+const MASAR_REGISTRATION_CLOSED = false;
+window.MASAR_REGISTRATION_CLOSED = false;
+function isMasarRegistrationClosed(){
+  try{
+    const s = (typeof getCountdownSettings === 'function') ? getCountdownSettings() : {};
+    if(!s || !s.main) return false;
+    const t = new Date(s.main).getTime();
+    if(Number.isNaN(t)) return false;
+    return Date.now() >= t;
+  }catch(e){ return false; }
+}
+window.isMasarRegistrationClosed = isMasarRegistrationClosed;
 function updateRegistrationLockState(forceLocked){
-  const locked = (typeof forceLocked === 'boolean') ? forceLocked : MASAR_REGISTRATION_CLOSED;
+  const locked = (typeof forceLocked === 'boolean') ? forceLocked : isMasarRegistrationClosed();
   const notice = q('#registerLockNotice');
   const card = q('#registerFormCard');
 
@@ -4783,7 +4797,15 @@ document.addEventListener('click', function(e){
       cancelled: !!r.cancelled
     });
   }
-  function key(r){ r=norm(r); return r.phone ? 'p:'+r.phone : 'n:'+String(r.name).trim()+'|'+String(r.grade).trim(); }
+  function key(r){
+    r=norm(r);
+    // السماح بتسجيل أكثر من طالب/ة بنفس رقم ولي الأمر:
+    // المفتاح أصبح رقم ولي الأمر + الاسم الرباعي + الصف، وليس الرقم وحده.
+    const phone = clean(r.phone || r.parentPhone || r.statusPhone || '');
+    const name = String(r.name || r.studentName || '').trim().replace(/\s+/g,' ');
+    const grade = String(r.grade || '').trim();
+    return [phone, name, grade].join('|');
+  }
   function readJSON(k, fallback){ try{return JSON.parse(localStorage.getItem(k)||'null') ?? fallback}catch(e){return fallback} }
   function writeJSON(k, v){ localStorage.setItem(k, JSON.stringify(v||[])); }
   function readLocal(){ return readJSON(LOCAL_KEY, []); }
@@ -4863,7 +4885,7 @@ document.addEventListener('click', function(e){
     const btn = e.target && e.target.closest && e.target.closest('#saveBtn');
     if(!btn) return;
     e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
-    if(window.MASAR_REGISTRATION_CLOSED === true || (typeof MASAR_REGISTRATION_CLOSED !== 'undefined' && MASAR_REGISTRATION_CLOSED === true)){
+    if(typeof window.isMasarRegistrationClosed === 'function' && window.isMasarRegistrationClosed()){
       alertMsg('انتهت فترة التسجيل 🔒','تم إغلاق بوابة التسجيل، ولا يمكن إضافة طلبات جديدة في الوقت الحالي.');
       updateRegistrationLockState(true);
       return false;
@@ -5636,25 +5658,17 @@ document.addEventListener('click', function(e){
 </script>
 <script id="registration-closed-final-lock">
 (function(){
-  function lockRegistrationNow(){
+  function syncRegistrationLock(){
     try{
-      window.MASAR_REGISTRATION_CLOSED = true;
-      if(typeof updateRegistrationLockState === 'function') updateRegistrationLockState(true);
-      document.querySelectorAll('.registerLockField').forEach(function(el){
-        if('disabled' in el) el.disabled = true;
-        el.setAttribute('aria-disabled','true');
-      });
-      var notice=document.getElementById('registerLockNotice');
-      if(notice){
-        notice.classList.add('active');
-        notice.innerHTML='<strong>🔒 انتهت فترة التسجيل</strong>تم إغلاق بوابة التسجيل، ولا يمكن إضافة طلبات جديدة في الوقت الحالي.';
-      }
-      document.getElementById('registerFormCard')?.classList.add('registerLocked');
-    }catch(e){console.warn('registration lock warning', e);}
+      var locked = (typeof window.isMasarRegistrationClosed === 'function') ? window.isMasarRegistrationClosed() : false;
+      window.MASAR_REGISTRATION_CLOSED = locked;
+      if(typeof updateRegistrationLockState === 'function') updateRegistrationLockState(locked);
+    }catch(e){console.warn('registration lock sync warning', e);}
   }
-  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', lockRegistrationNow); else lockRegistrationNow();
-  setTimeout(lockRegistrationNow, 500);
-  setTimeout(lockRegistrationNow, 2000);
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', syncRegistrationLock); else syncRegistrationLock();
+  setTimeout(syncRegistrationLock, 500);
+  setTimeout(syncRegistrationLock, 2000);
+  setInterval(syncRegistrationLock, 15000);
 })();
 </script>
 <!-- ===== VIP Admin username/password gate: added by ChatGPT ===== -->
@@ -6596,7 +6610,7 @@ document.addEventListener('click', function(e){
     const id=currentIdentity();
     const code=clean($('#registerCode')?.value);
     if(!pending){ msg('اضغطي أولًا على إرسال رمز واتساب.', 'danger'); return false; }
-    if(pending.name!==id.name || pending.phone!==id.phone){ resetVerification('تغير الاسم أو رقم الجوال؛ أرسلي رمزًا جديدًا.'); return false; }
+    if(pending.name!==id.name || pending.phone!==id.phone){ resetVerification('لا يمكن تغيير الاسم أو رقم الجوال بعد إرسال الرمز؛ أرسلي رمزًا جديدًا لنفس البيانات.'); return false; }
     if(Date.now()>pending.expires){ resetVerification('انتهت صلاحية الرمز. أرسلي رمزًا جديدًا.'); return false; }
     if(!/^\d{6}$/.test(code)){ msg('أدخلي رمز التأكيد المكوّن من 6 أرقام.', 'danger'); return false; }
 
@@ -6683,6 +6697,9 @@ document.addEventListener('click', function(e){
   #staffVerifyStatus.verified{background:#ecfdf3!important;color:#166534!important;border:1px solid #bbf7d0!important;border-radius:14px!important;padding:9px 10px!important}
   #staffVerifyStatus.danger{background:#fef2f2!important;color:#991b1b!important;border:1px solid #fecaca!important;border-radius:14px!important;padding:9px 10px!important}
   #staffVerifyStatus.wait{background:#fff7ed!important;color:#7c4b18!important;border:1px solid rgba(201,161,95,.28)!important;border-radius:14px!important;padding:9px 10px!important}
+  #registerPhone.phoneLocked{background:#f8fafc!important;color:#475569!important;border-color:#bbf7d0!important;box-shadow:0 0 0 4px rgba(34,197,94,.08)!important}
+  #changeVerifiedPhoneBtn{margin-top:8px;border:0;border-radius:14px;padding:10px 12px;background:linear-gradient(135deg,#f6eee4,#ead7c2);color:#6a5451;font-weight:1000;cursor:pointer;width:100%;display:none}
+  #changeVerifiedPhoneBtn.active{display:block}
 </style>
 <script id="execute-after-verify-final-fix">
 (function(){
@@ -6735,8 +6752,21 @@ document.addEventListener('click', function(e){
       btn.title = ok ? 'جاهز لتنفيذ العملية' : 'يلزم تأكيد رمز واتساب الصحيح أولًا';
     }
   }
+  function lockPhoneField(){
+    const ph=$('#registerPhone');
+    const ch=$('#changeVerifiedPhoneBtn');
+    if(ph){ ph.readOnly=true; ph.classList.add('phoneLocked'); ph.title='تم إرسال الرمز لهذا الرقم؛ لا يمكن تغييره إلا بإرسال رمز جديد.'; }
+    if(ch) ch.classList.add('active');
+  }
+  function unlockPhoneField(){
+    const ph=$('#registerPhone');
+    const ch=$('#changeVerifiedPhoneBtn');
+    if(ph){ ph.readOnly=false; ph.classList.remove('phoneLocked'); ph.title=''; }
+    if(ch) ch.classList.remove('active');
+  }
   function resetVerify(text){
     pending=null; verified=null; window.MASAR_STAFF_PHONE_VERIFIED=false;
+    unlockPhoneField();
     updateButton();
     if(text) setStatus(text,'wait');
   }
@@ -6754,18 +6784,19 @@ document.addEventListener('click', function(e){
     if(!isPhoneOk(id.phone)){ setStatus('أدخلي رقم جوال سعودي صحيح مثل 05xxxxxxxx.','danger'); return false; }
     const code=String(Math.floor(100000+Math.random()*900000));
     pending={name:id.name, phone:id.phone, hash:await sha256(code+'|'+id.name+'|'+id.phone), expires:Date.now()+CODE_TTL_MS, attempts:0};
+    lockPhoneField();
     verified=null; window.MASAR_STAFF_PHONE_VERIFIED=false; updateButton();
     const text=`رمز تأكيد تسجيلك في مسابقة مسار الأعداد هو: ${code}\nصالح لمدة 5 دقائق فقط. لا تشاركي الرمز مع أي شخص.`;
     window.open('https://wa.me/'+id.phone+'?text='+encodeURIComponent(text),'_blank');
-    setStatus('تم تجهيز رسالة واتساب برمز خاص صالح 5 دقائق. أدخلي الرمز ثم اضغطي تأكيد الرمز.','wait');
-    setRegMsg('بعد تأكيد الرمز الصحيح يمكنك الضغط على تنفيذ العملية.');
+    setStatus('تم تجهيز رسالة واتساب لنفس الرقم المدخل فقط. لا يمكن تنفيذ العملية إلا إذا أُدخل الرمز الصحيح لهذا الرقم.','wait');
+    setRegMsg('بعد تأكيد رمز نفس الرقم يمكنك الضغط على تنفيذ العملية.');
     return false;
   }
   async function verifyCode(){
     const id=identity();
     const code=clean($('#registerCode')?.value);
     if(!pending){ setStatus('اضغطي أولًا على إرسال رمز واتساب.','danger'); return false; }
-    if(pending.name!==id.name || pending.phone!==id.phone){ resetVerify('تغير الاسم أو رقم الجوال؛ أرسلي رمزًا جديدًا.'); return false; }
+    if(pending.name!==id.name || pending.phone!==id.phone){ resetVerify('لا يمكن تغيير الاسم أو رقم الجوال بعد إرسال الرمز؛ أرسلي رمزًا جديدًا لنفس البيانات.'); return false; }
     if(Date.now()>pending.expires){ resetVerify('انتهت صلاحية الرمز. أرسلي رمزًا جديدًا.'); return false; }
     if(!/^\d{6}$/.test(code)){ setStatus('أدخلي رمز التأكيد المكوّن من 6 أرقام.','danger'); return false; }
     pending.attempts++;
@@ -6820,18 +6851,20 @@ document.addEventListener('click', function(e){
       <div class="field"><label for="registerPhone">رقم جوال المعلمة للتأكيد عبر واتساب</label><input id="registerPhone" class="input" inputmode="numeric" autocomplete="off" placeholder="05xxxxxxxx"></div>
       <div class="field"><label for="registerCode">رمز التأكيد</label><input id="registerCode" class="input" inputmode="numeric" autocomplete="off" placeholder="أدخلي الرمز بعد استلامه"></div>
       <div class="verifyGrid"><button class="serviceBtn darkBtn" type="button" id="sendStaffCodeBtn">إرسال رمز واتساب</button><button class="serviceBtn goldBtn" type="button" id="verifyStaffCodeBtn">تأكيد الرمز</button></div>
-      <div id="staffVerifyStatus" class="whatsappVerifyStatus wait">التأكيد مطلوب مرة واحدة عند التسجيل.</div>`;
+      <div id="staffVerifyStatus" class="whatsappVerifyStatus wait">التأكيد مطلوب مرة واحدة عند التسجيل.</div><button id="changeVerifiedPhoneBtn" type="button">تغيير الرقم وإرسال رمز جديد</button>`;
     ref.parentNode.insertBefore(box, ref);
   }
   function bindFinal(){ ensureVerifyBox(); updateButton(); }
 
   document.addEventListener('click', function(e){
+    const change=e.target.closest && e.target.closest('#changeVerifiedPhoneBtn');
     const send=e.target.closest && e.target.closest('#sendStaffCodeBtn');
     const verify=e.target.closest && e.target.closest('#verifyStaffCodeBtn');
     const save=e.target.closest && e.target.closest('#registerSaveBtn');
-    if(!send && !verify && !save) return;
+    if(!change && !send && !verify && !save) return;
     e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
-    if(send) sendCode();
+    if(change) resetVerify('تم فتح الرقم للتعديل. أدخلي الرقم ثم أرسلي رمزًا جديدًا.');
+    else if(send) sendCode();
     else if(verify) verifyCode();
     else if(save) saveUser();
     return false;
@@ -6883,6 +6916,401 @@ document.addEventListener('click', function(e){
       return false;
     }
   }, true);
+})();
+</script>
+
+
+
+<!-- ===== الحماية القصوى لتسجيل طاقم المدرسة: رمز مرتبط بنفس الرقم + انتهاء + محاولات + قفل مؤقت ===== -->
+<style id="masar-max-security-style">
+  #registerSaveBtn.maxSecLocked{opacity:.50!important;filter:grayscale(.35)!important;cursor:not-allowed!important;box-shadow:none!important}
+  #registerSaveBtn.maxSecReady{opacity:1!important;filter:none!important;cursor:pointer!important;box-shadow:0 16px 28px rgba(196,149,74,.28)!important}
+  #staffVerifyStatus.maxOk{background:#ecfdf3!important;color:#166534!important;border:1px solid #bbf7d0!important;border-radius:16px!important;padding:11px 12px!important;font-weight:1000!important;line-height:1.8!important;text-align:center!important}
+  #staffVerifyStatus.maxWarn{background:#fff7ed!important;color:#7c4b18!important;border:1px solid rgba(201,161,95,.32)!important;border-radius:16px!important;padding:11px 12px!important;font-weight:1000!important;line-height:1.8!important;text-align:center!important}
+  #staffVerifyStatus.maxBad{background:#fef2f2!important;color:#991b1b!important;border:1px solid #fecaca!important;border-radius:16px!important;padding:11px 12px!important;font-weight:1000!important;line-height:1.8!important;text-align:center!important}
+  #registerPhone.maxPhoneLocked{background:#f8fafc!important;color:#475569!important;border-color:#86efac!important;box-shadow:0 0 0 4px rgba(34,197,94,.10)!important}
+  #sendStaffCodeBtn.maxSending{opacity:.65!important;pointer-events:none!important;filter:grayscale(.15)!important}
+  #changeVerifiedPhoneBtn.maxVisible{display:block!important;margin-top:9px!important;border:0!important;border-radius:15px!important;padding:11px 12px!important;background:linear-gradient(135deg,#f6eee4,#ead7c2)!important;color:#6a5451!important;font-weight:1000!important;cursor:pointer!important;width:100%!important}
+  .masarSecurityMini{margin-top:8px;padding:10px 12px;border-radius:15px;background:linear-gradient(135deg,rgba(39,70,83,.07),rgba(201,161,95,.14));border:1px solid rgba(201,161,95,.20);color:#274653;font-size:12px;font-weight:1000;line-height:1.8;text-align:center}
+</style>
+<script id="masar-max-security-script">
+(function(){
+  'use strict';
+  window.__MASAR_MAX_SECURITY_INSTALLED = true;
+
+  const STORE_USERS = 'masar_mobile_users';
+  const TTL_MS = 3 * 60 * 1000;          // صلاحية الرمز 3 دقائق
+  const MAX_ATTEMPTS = 3;                // 3 محاولات فقط لكل رمز
+  const RESEND_COOLDOWN_MS = 60 * 1000;  // منع إعادة الإرسال السريع
+  const LOCK_MS = 10 * 60 * 1000;        // قفل مؤقت 10 دقائق بعد نفاد المحاولات
+
+  let pending = null;
+  let verified = null;
+  let lastSendAt = 0;
+  let lockedUntil = 0;
+
+  const $ = (s,r)=> (r||document).querySelector(s);
+  const $$ = (s,r)=> Array.from((r||document).querySelectorAll(s));
+  const clean = v => String(v||'').trim();
+
+  function normalizePhone(v){
+    let n = String(v||'').replace(/[^0-9]/g,'');
+    if(n.startsWith('00')) n = n.slice(2);
+    if(n.startsWith('0')) n = '966' + n.slice(1);
+    if(n.length===9 && n.startsWith('5')) n = '966' + n;
+    return n;
+  }
+  function displayPhone(n){ return n ? ('+'+n) : ''; }
+  function okPhone(n){ return /^9665\d{8}$/.test(n); }
+  function id(){ return { name: clean($('#registerName')?.value), phone: normalizePhone($('#registerPhone')?.value) }; }
+  function allowedNames(){ return $$('#registerName option').map(o=>clean(o.value)).filter(Boolean); }
+  function setReg(text){ const el=$('#registerMsg'); if(el) el.textContent=text||''; }
+  function status(text,type){
+    const el=$('#staffVerifyStatus'); if(!el) return;
+    el.textContent = text || '';
+    el.classList.remove('verified','danger','wait','maxOk','maxWarn','maxBad');
+    el.classList.add(type==='ok'?'maxOk':type==='bad'?'maxBad':'maxWarn');
+  }
+  function readUsers(){ try{return JSON.parse(localStorage.getItem(STORE_USERS)||'[]')||[]}catch(e){return []} }
+  function writeUsers(list){
+    localStorage.setItem(STORE_USERS, JSON.stringify(list));
+    try{ if(typeof window.setUsers==='function') window.setUsers(list); }catch(e){}
+    try{ if(typeof window.renderAdminDataTables==='function') window.renderAdminDataTables(); }catch(e){}
+  }
+  function secondsLeft(ms){ return Math.max(0, Math.ceil(ms/1000)); }
+  async function sha256(text){
+    if(window.crypto && crypto.subtle){
+      const data = new TextEncoder().encode(text);
+      const buf = await crypto.subtle.digest('SHA-256', data);
+      return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+    }
+    return 'fallback:' + btoa(unescape(encodeURIComponent(text))).slice(0,64);
+  }
+  function updateSaveState(){
+    const btn = $('#registerSaveBtn');
+    const cur = id();
+    const ok = !!(verified && verified.name===cur.name && verified.phone===cur.phone && Date.now() < (verified.validUntil||0));
+    window.MASAR_STAFF_PHONE_VERIFIED = ok;
+    if(btn){
+      btn.classList.toggle('maxSecReady', ok);
+      btn.classList.toggle('maxSecLocked', !ok);
+      btn.setAttribute('aria-disabled', ok ? 'false' : 'true');
+      btn.title = ok ? 'جاهز للتنفيذ بعد تحقق الرقم' : 'يلزم إدخال رمز التحقق الصحيح لنفس الرقم أولًا';
+    }
+  }
+  function lockPhone(){
+    const ph=$('#registerPhone'), ch=$('#changeVerifiedPhoneBtn');
+    if(ph){ ph.readOnly=true; ph.classList.add('maxPhoneLocked','phoneLocked'); ph.title='تم إرسال الرمز لهذا الرقم؛ لتغييره اضغطي زر تغيير الرقم.'; }
+    if(ch) ch.classList.add('maxVisible','active');
+  }
+  function unlockPhone(){
+    const ph=$('#registerPhone'), ch=$('#changeVerifiedPhoneBtn');
+    if(ph){ ph.readOnly=false; ph.classList.remove('maxPhoneLocked','phoneLocked'); ph.title=''; }
+    if(ch) ch.classList.remove('maxVisible','active');
+  }
+  function resetAll(text){
+    pending=null; verified=null; window.MASAR_STAFF_PHONE_VERIFIED=false;
+    unlockPhone(); updateSaveState();
+    if(text) status(text,'warn');
+  }
+  function ensureBox(){
+    let box = $('#staffWhatsAppVerifyBox');
+    const ref = $('#registerUsername')?.closest('.field') || $('#registerType')?.closest('.field');
+    if(!box && ref && ref.parentNode){
+      box=document.createElement('div');
+      box.id='staffWhatsAppVerifyBox';
+      box.className='whatsappVerifyBox';
+      box.innerHTML=`
+        <div class="field"><label for="registerPhone">رقم جوال المعلمة للتأكيد عبر واتساب</label><input id="registerPhone" class="input" inputmode="numeric" autocomplete="off" placeholder="05xxxxxxxx"></div>
+        <div class="field"><label for="registerCode">رمز التأكيد</label><input id="registerCode" class="input" inputmode="numeric" autocomplete="off" placeholder="أدخلي الرمز بعد استلامه"></div>
+        <div class="verifyGrid"><button class="serviceBtn darkBtn" type="button" id="sendStaffCodeBtn">إرسال رمز واتساب</button><button class="serviceBtn goldBtn" type="button" id="verifyStaffCodeBtn">تأكيد الرمز</button></div>
+        <div id="staffVerifyStatus" class="whatsappVerifyStatus maxWarn">التأكيد مطلوب مرة واحدة عند التسجيل.</div>
+        <button id="changeVerifiedPhoneBtn" type="button">تغيير الرقم وإرسال رمز جديد</button>`;
+      ref.parentNode.insertBefore(box, ref);
+    }
+    if(box && !$('#masarSecurityMini')){
+      const mini=document.createElement('div');
+      mini.id='masarSecurityMini'; mini.className='masarSecurityMini';
+      mini.textContent='حماية قصوى: الرمز مرتبط بنفس الاسم والرقم، صالح 3 دقائق، 3 محاولات فقط، وقفل مؤقت عند التلاعب.';
+      box.appendChild(mini);
+    }
+  }
+  async function sendCode(){
+    const cur=id();
+    const now=Date.now();
+    if(now < lockedUntil){ status('تم القفل مؤقتًا بسبب محاولات خاطئة. انتظري '+secondsLeft(lockedUntil-now)+' ثانية ثم حاولي مرة أخرى.','bad'); return false; }
+    if(now - lastSendAt < RESEND_COOLDOWN_MS){ status('انتظري '+secondsLeft(RESEND_COOLDOWN_MS-(now-lastSendAt))+' ثانية قبل إرسال رمز جديد.','warn'); return false; }
+    if(!allowedNames().includes(cur.name)){ status('اختاري الاسم من قائمة طاقم المدرسة المعتمدة أولًا.','bad'); return false; }
+    if(!okPhone(cur.phone)){ status('أدخلي رقم جوال سعودي صحيح مثل 05xxxxxxxx.','bad'); return false; }
+
+    const code = String(Math.floor(100000 + Math.random()*900000));
+    const salt = String(Math.random()).slice(2) + '|' + Date.now();
+    pending = {
+      name:cur.name,
+      phone:cur.phone,
+      salt,
+      hash: await sha256(code+'|'+cur.name+'|'+cur.phone+'|'+salt),
+      expires: now + TTL_MS,
+      attempts:0
+    };
+    verified=null; lastSendAt=now; updateSaveState(); lockPhone();
+    const btn=$('#sendStaffCodeBtn'); if(btn){ btn.classList.add('maxSending'); setTimeout(()=>btn.classList.remove('maxSending'), 1200); }
+    const text = `رمز تأكيد تسجيلك في مسابقة مسار الأعداد هو: ${code}\nالرمز مرتبط بالرقم ${displayPhone(cur.phone)} وصالح لمدة 3 دقائق فقط. لا تشاركي الرمز مع أي شخص.`;
+    window.open('https://wa.me/'+cur.phone+'?text='+encodeURIComponent(text),'_blank');
+    status('تم تجهيز رسالة واتساب لنفس الرقم المدخل '+displayPhone(cur.phone)+'. أدخلي الرمز خلال 3 دقائق.','warn');
+    setReg('لا يمكن تنفيذ العملية إلا بعد تأكيد الرمز الصحيح لنفس الرقم.');
+    return false;
+  }
+  async function verifyCode(){
+    const cur=id();
+    const code=clean($('#registerCode')?.value);
+    const now=Date.now();
+    if(now < lockedUntil){ status('تم القفل مؤقتًا بسبب محاولات خاطئة. انتظري '+secondsLeft(lockedUntil-now)+' ثانية.','bad'); return false; }
+    if(!pending){ status('اضغطي أولًا على إرسال رمز واتساب.','bad'); return false; }
+    if(cur.name!==pending.name || cur.phone!==pending.phone){ resetAll('تغير الاسم أو الرقم بعد إرسال الرمز. أرسلي رمزًا جديدًا لنفس البيانات.'); return false; }
+    if(now > pending.expires){ resetAll('انتهت صلاحية الرمز بعد 3 دقائق. أرسلي رمزًا جديدًا.'); return false; }
+    if(!/^\d{6}$/.test(code)){ status('أدخلي رمز التأكيد المكوّن من 6 أرقام.','bad'); return false; }
+    pending.attempts++;
+    const hash = await sha256(code+'|'+pending.name+'|'+pending.phone+'|'+pending.salt);
+    if(hash !== pending.hash){
+      const left = MAX_ATTEMPTS - pending.attempts;
+      if(left <= 0){ lockedUntil = Date.now() + LOCK_MS; resetAll('تم القفل 10 دقائق بعد 3 محاولات خاطئة.'); }
+      else status('رمز التأكيد غير صحيح. المحاولات المتبقية: '+left,'bad');
+      return false;
+    }
+    verified={name:pending.name, phone:pending.phone, at:now, validUntil: now + 30*60*1000};
+    pending=null; updateSaveState();
+    status('✅ تم تأكيد نفس الرقم بنجاح. يمكنك الآن الضغط على تنفيذ العملية.','ok');
+    setReg('تم التحقق من الرقم، اضغطي تنفيذ العملية لإنشاء الحساب.');
+    return false;
+  }
+  function saveUser(){
+    const cur=id();
+    const type=clean($('#registerType')?.value);
+    const username=clean($('#registerUsername')?.value);
+    const password=clean($('#registerPassword')?.value);
+    const now=Date.now();
+    if(!allowedNames().includes(cur.name)){ setReg('اختاري الاسم من القائمة المعتمدة.'); status('الاسم غير معتمد للتسجيل.','bad'); return false; }
+    if(!okPhone(cur.phone)){ setReg('أدخلي رقم جوال صحيح.'); status('رقم الجوال غير صحيح.','bad'); return false; }
+    if(!username || !password){ setReg('أكملي اسم المستخدم وكلمة المرور.'); return false; }
+    if(!(verified && verified.name===cur.name && verified.phone===cur.phone && now < verified.validUntil)){
+      setReg('ممنوع إنشاء الحساب قبل تأكيد رمز واتساب الصحيح لنفس الرقم.');
+      status('التحقق مطلوب: أرسلي الرمز لنفس الرقم ثم أدخليه واضغطي تأكيد الرمز.','bad');
+      updateSaveState(); return false;
+    }
+    const list=readUsers();
+    if(list.some(u=>String(u.username||'')===username)){ setReg('اسم المستخدم مستخدم مسبقًا. اختاري اسمًا آخر.'); return false; }
+    if(list.some(u=>normalizePhone(u.phone||'')===cur.phone && String(u.name||'')!==cur.name)){
+      setReg('هذا الرقم مستخدم مع اسم آخر. راجعي الإدارة قبل التسجيل.');
+      status('تم منع استخدام رقم مسجل باسم مختلف لحماية الحسابات.','bad');
+      return false;
+    }
+    list.push({name:cur.name,type,username,password,phone:cur.phone,createdAt:new Date().toLocaleString('ar-SA'),lastLogin:'لم يتم بعد',whatsappVerified:true,verifiedAt:new Date().toISOString(),securityLevel:'max'});
+    writeUsers(list);
+    try{ if(typeof window.showFancyAlert==='function') window.showFancyAlert('تم إنشاء الحساب ✅','تم تنفيذ العملية بعد حماية الرمز والرقم بنجاح.'); }catch(e){}
+    setReg('✅ تم إنشاء الحساب بنجاح بعد التحقق القصوى.');
+    ['registerUsername','registerPassword','registerPhone','registerCode'].forEach(k=>{const el=$('#'+k); if(el) el.value='';});
+    const sel=$('#registerName'); if(sel) sel.selectedIndex=0;
+    pending=null; verified=null; unlockPhone(); updateSaveState();
+    status('التأكيد مطلوب مرة واحدة عند تسجيل حساب جديد.','warn');
+    return false;
+  }
+
+  function bind(){ ensureBox(); updateSaveState(); }
+
+  document.addEventListener('click', function(e){
+    const change=e.target.closest && e.target.closest('#changeVerifiedPhoneBtn');
+    const send=e.target.closest && e.target.closest('#sendStaffCodeBtn');
+    const verify=e.target.closest && e.target.closest('#verifyStaffCodeBtn');
+    const save=e.target.closest && e.target.closest('#registerSaveBtn');
+    if(!change && !send && !verify && !save) return;
+    e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
+    if(change){ lastSendAt=0; resetAll('تم فتح الرقم للتعديل. أدخلي الرقم الصحيح ثم أرسلي رمزًا جديدًا.'); }
+    else if(send) sendCode();
+    else if(verify) verifyCode();
+    else if(save) saveUser();
+    return false;
+  }, true);
+
+  document.addEventListener('input', function(e){
+    if(!e.target) return;
+    if(e.target.id==='registerName' || (e.target.id==='registerPhone' && !e.target.readOnly)) resetAll('تغير الاسم أو رقم الجوال؛ يلزم إرسال رمز جديد.');
+    if(e.target.id==='registerCode') updateSaveState();
+  }, true);
+  document.addEventListener('change', function(e){
+    if(!e.target) return;
+    if(e.target.id==='registerName' || (e.target.id==='registerPhone' && !e.target.readOnly)) resetAll('تغير الاسم أو رقم الجوال؛ يلزم إرسال رمز جديد.');
+  }, true);
+
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', bind); else bind();
+  window.addEventListener('load', function(){ bind(); setTimeout(bind,600); setTimeout(bind,1600); setTimeout(bind,3200); });
+})();
+</script>
+
+
+
+<!-- ===== تحديث نهائي: استعلام بدون إعلام + شريط تقدم واضح ===== -->
+<style id="masar-inquiry-progress-final-style">
+#statusResult.finalMasarProgressInquiry{border:0!important;background:transparent!important;padding:0!important;box-shadow:none!important;min-height:auto!important;overflow:visible!important}
+.progressInquiryWrap{border-radius:30px;overflow:hidden;background:linear-gradient(180deg,#fffdf9 0%,#fff8ef 100%);border:1px solid rgba(201,161,95,.25);box-shadow:0 20px 42px rgba(39,70,83,.12)}
+.progressInquiryHead{padding:17px 14px;background:linear-gradient(135deg,#274653,#567e86,#c9a15f);color:#fff;text-align:center;position:relative;overflow:hidden}
+.progressInquiryHead:after{content:"";position:absolute;top:0;left:-120%;width:42%;height:100%;background:rgba(255,255,255,.18);transform:skewX(-24deg);animation:vipSweep 5s linear infinite;pointer-events:none}
+.progressInquiryHead .title{font-size:21px;font-weight:1000;line-height:1.7;color:#fff}
+.progressInquiryHead .sub{font-size:12px;font-weight:900;line-height:1.8;color:rgba(255,255,255,.93)}
+.progressSummaryGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;padding:12px;background:rgba(255,255,255,.62)}
+.progressMiniBox{border-radius:18px;background:#fff;border:1px solid rgba(0,0,0,.06);padding:11px 8px;text-align:center;box-shadow:0 8px 18px rgba(39,70,83,.05)}
+.progressMiniBox .k{font-size:11px;color:#6b7280;font-weight:1000;margin-bottom:5px}.progressMiniBox .v{font-size:15px;color:#274653;font-weight:1000;line-height:1.6}
+.progressStudentCard{margin:12px;border-radius:24px;background:#fff;border:1px solid rgba(0,0,0,.08);overflow:hidden;box-shadow:0 13px 26px rgba(39,70,83,.08)}
+.progressStudentTop{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px;background:linear-gradient(135deg,#f7eee4,#fffaf3);border-bottom:1px solid rgba(0,0,0,.06)}
+.progressName{min-width:0;color:#274653;font-size:16px;font-weight:1000;line-height:1.6;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.progressGrade{color:#6b7280;font-size:12px;font-weight:1000;margin-top:2px}
+.progressPill{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-width:100px;padding:8px 12px;border-radius:999px;font-size:12px;font-weight:1000;border:1px solid transparent;white-space:nowrap}.progressPill .dot{width:8px;height:8px;border-radius:50%;background:currentColor;display:inline-block}.pGreen{background:#ecfdf3;color:#166534;border-color:#bbf7d0}.pYellow{background:#fff7ed;color:#9a5b00;border-color:#fed7aa}.pRed{background:#fef2f2;color:#991b1b;border-color:#fecaca}.pBlue{background:#eff6ff;color:#1e3a8a;border-color:#bfdbfe}.pGray{background:#f8fafc;color:#475569;border-color:#e2e8f0}
+.progressBarBox{margin:12px;padding:14px;border-radius:22px;background:linear-gradient(135deg,rgba(39,70,83,.07),rgba(201,161,95,.13));border:1px solid rgba(201,161,95,.22)}
+.progressBarTitle{display:flex;align-items:center;justify-content:space-between;gap:8px;color:#274653;font-weight:1000;font-size:14px;margin-bottom:10px}.progressBarTitle span:last-child{color:#9a5b00}
+.progressTrack{height:18px;border-radius:999px;background:#eef1f3;overflow:hidden;border:1px solid rgba(0,0,0,.06);box-shadow:inset 0 2px 5px rgba(0,0,0,.06)}
+.progressFill{height:100%;border-radius:999px;background:linear-gradient(135deg,#274653,#6da2a9,#c9a15f);box-shadow:0 6px 14px rgba(39,70,83,.18);transition:width .3s ease}
+.progressLabels{display:flex;justify-content:space-between;gap:6px;margin-top:9px;color:#6b7280;font-size:10px;font-weight:1000}.progressLabels span{flex:1;text-align:center}
+.nextStageBox{margin:0 12px 12px;padding:13px;border-radius:20px;background:#fff;border:1px solid rgba(0,0,0,.06);display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;box-shadow:0 8px 16px rgba(39,70,83,.04)}
+.nextStageBox .label{color:#6b7280;font-size:12px;font-weight:1000}.nextStageBox .value{color:#274653;font-size:16px;font-weight:1000;line-height:1.7}
+.stageList{display:grid;gap:8px;padding:0 12px 12px}.stageRow{display:grid;grid-template-columns:38px 1fr auto;gap:9px;align-items:center;border:1px solid #eef1f3;border-radius:18px;padding:10px;background:linear-gradient(180deg,#fff,#fffdf9)}.stageNum{width:32px;height:32px;border-radius:13px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,rgba(86,126,134,.10),rgba(201,161,95,.16));color:#274653;font-weight:1000}.stageTitle{font-size:13px;color:#475569;font-weight:1000;margin-bottom:2px}.stageValue{font-size:14px;color:#111827;font-weight:1000;line-height:1.6}
+.progressEmpty{padding:16px 14px;border-radius:24px;background:linear-gradient(135deg,#fff7ed,#fffdf9);border:1px solid rgba(201,161,95,.22);box-shadow:0 12px 28px rgba(39,70,83,.08);color:#274653;text-align:center;font-weight:1000;line-height:1.9}.progressEmpty.red{background:linear-gradient(135deg,#fef2f2,#fff7ed);border-color:rgba(153,27,27,.16);color:#7f1d1d}
+@media(max-width:520px){.progressSummaryGrid{grid-template-columns:1fr}.progressStudentTop{align-items:stretch;flex-direction:column;text-align:center}.progressName{white-space:normal}.nextStageBox{grid-template-columns:1fr;text-align:center}.stageRow{grid-template-columns:34px 1fr}.stageRow .progressPill{grid-column:1 / -1;justify-self:center;width:100%;max-width:220px}.progressLabels{font-size:9px}}
+
+/* تعديل نهائي: حذف صندوق المرحلة التالية وإبراز شريط التقدم */
+.nextStageBox,.mfiNext{display:none!important}
+.progressBarBox,.mfiProgressBox{padding:18px!important;border-radius:24px!important;background:linear-gradient(135deg,rgba(39,70,83,.10),rgba(201,161,95,.20))!important;border:1px solid rgba(201,161,95,.34)!important;box-shadow:0 12px 24px rgba(39,70,83,.10)!important}
+.progressTrack,.mfiTrack{height:26px!important;border-radius:999px!important;background:#eef1f3!important}
+.progressFill,.mfiFill{border-radius:999px!important;background:linear-gradient(135deg,#274653,#6da2a9,#c9a15f)!important}
+.progressBarTitle,.mfiProgressTitle{font-size:15px!important;font-weight:1000!important;color:#274653!important}
+</style>
+<script id="masar-inquiry-progress-final-script">
+(function(){
+  window.__masarInquiryCleanVipFinal=false;
+  function $(id){return document.getElementById(id)}
+  function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+  function clean(s){return String(s||'').replace(/\D/g,'').replace(/^966/,'0').trim()}
+  function readRecords(){try{if(typeof getRecords==='function')return getRecords()||[]}catch(e){};var keys=['masar_mobile_records','records','contestants','students','mathPathRecords','masarRecords'];for(var i=0;i<keys.length;i++){try{var v=JSON.parse(localStorage.getItem(keys[i])||'[]');if(Array.isArray(v)&&v.length)return v}catch(e){}}return[]}
+  function val(r,keys,fallback){for(var i=0;i<keys.length;i++){var v=r&&r[keys[i]];if(v!==undefined&&v!==null&&String(v).trim()!=='')return String(v).trim()}return fallback||'لم يبدأ'}
+  function entered(r,k){var m=(r&&r.resultEnteredStages)||{};if(m[k])return true;if(k==='stage1')return!!(r&&r.stageOneEntered);if(k==='stage2')return!!(r&&r.stageTwoEntered);if(k==='stage3')return!!(r&&r.stageThreeEntered);if(k==='win')return!!(r&&r.winStageEntered);return false}
+  function norm(t){t=String(t||'').trim();if(!t)return'لم يبدأ';if(/غير فائز/.test(t))return'لم يبدأ';return t}
+  function stageVal(r,k){var v='لم يبدأ';if(k==='reg')v='مسجل';if(k==='stage1')v=val(r,['stageOne','nomination','phase1'],'لم يبدأ');if(k==='stage2')v=val(r,['stageTwo','sorting','phase2'],'لم يبدأ');if(k==='stage3')v=val(r,['stageThree','phase3'],'لم يبدأ');if(k==='win')v=entered(r,'win')?val(r,['winStage','winnerStage','win'],'لم يبدأ'):'لم يبدأ';return norm(v)}
+  function isFail(t){return /غير مرشح|غير مجتاز|غير متأهل|مستبعد|مرفوض|ملغي|إلغاء|محذوف/.test(String(t||''))}
+  function isPass(k,t){t=String(t||'');if(k==='reg')return /مسجل|نشط/.test(t);if(k==='stage1')return /مرشح|مجتاز|متأهل|فائز/.test(t)&&!isFail(t);if(k==='stage2')return /مجتاز|متأهل|فائز/.test(t)&&!isFail(t);if(k==='stage3')return /متأهل|فائز/.test(t)&&!isFail(t);if(k==='win')return /فائز/.test(t)&&!isFail(t);return false}
+  function pill(text){var t=String(text||'لم يبدأ');var cls='pYellow';if(isFail(t))cls='pRed';else if(/فائز|مرشح|مجتاز|متأهل|مسجل|نشط|تم/.test(t)&&!/لم|غير/.test(t))cls='pGreen';else if(/لم يبدأ|انتظار|بانتظار|قيد|لا يوجد/.test(t))cls='pYellow';else cls='pBlue';return '<span class="progressPill '+cls+'"><span class="dot"></span>'+esc(t)+'</span>'}
+  function calc(r){
+    if(r&&r.cancelled)return{status:'ملغي',next:'تم إلغاء المتسابق',done:0,remain:'توقفت المشاركة'};
+    var s1=stageVal(r,'stage1'),s2=stageVal(r,'stage2'),s3=stageVal(r,'stage3'),win=stageVal(r,'win');
+    if(isFail(s1))return{status:s1,next:'لم ينتقل للمرحلة الثانية',done:0,remain:'توقفت عند المرحلة الأولى'};
+    if(isFail(s2))return{status:s2,next:'لم ينتقل للمرحلة الثالثة',done:1,remain:'توقفت عند المرحلة الثانية'};
+    if(isFail(s3))return{status:s3,next:'لم ينتقل لمرحلة الفوز',done:2,remain:'توقفت عند المرحلة الثالثة'};
+    if(isPass('win',win))return{status:'فائز',next:'تم الوصول للفوز',done:4,remain:'اكتمل المسار'};
+    if(isPass('stage3',s3))return{status:s3,next:'مرحلة الفوز',done:3,remain:'تبقى خطوة واحدة على الفوز'};
+    if(isPass('stage2',s2))return{status:s2,next:'المرحلة الثالثة',done:2,remain:'تبقى خطوتان على الفوز'};
+    if(isPass('stage1',s1))return{status:s1,next:'المرحلة الثانية',done:1,remain:'تبقى 3 خطوات على الفوز'};
+    return{status:'مسجل',next:'المرحلة الأولى',done:0,remain:'تبقى 4 خطوات على الفوز'};
+  }
+  function row(n,title,value){return '<div class="stageRow"><div class="stageNum">'+n+'</div><div><div class="stageTitle">'+esc(title)+'</div><div class="stageValue">'+esc(value)+'</div></div>'+pill(value)+'</div>'}
+  function card(r){
+    var name=val(r,['name','studentName','fullName'],'بدون اسم'),grade=val(r,['grade','className','class','level'],'غير محدد'),c=calc(r),pct=Math.max(0,Math.min(100,(c.done/4)*100));
+    var stages=row('1','المرحلة الأولى',stageVal(r,'stage1'))+row('2','المرحلة الثانية',stageVal(r,'stage2'))+row('3','المرحلة الثالثة',stageVal(r,'stage3'))+row('4','مرحلة الفوز',stageVal(r,'win'));
+    return '<div class="progressStudentCard"><div class="progressStudentTop"><div><div class="progressName">'+esc(name)+'</div><div class="progressGrade">الصف: '+esc(grade)+'</div></div>'+pill(c.status)+'</div><div class="progressBarBox"><div class="progressBarTitle"><span>شريط التقدم نحو الفوز</span><span>'+esc(c.remain)+'</span></div><div class="progressTrack"><div class="progressFill" style="width:'+pct+'%"></div></div><div class="progressLabels"><span>التسجيل</span><span>الأولى</span><span>الثانية</span><span>الثالثة</span><span>الفوز</span></div></div><div class="stageList">'+stages+'</div></div>';
+  }
+  function render(){
+    var phoneEl=$('statusPhone'),box=$('statusResult');if(!phoneEl||!box)return;var phone=clean(phoneEl.value);box.className='finalMasarProgressInquiry';
+    if(!phone){box.innerHTML='<div class="progressEmpty">أدخلي رقم ولي الأمر أولًا ثم اضغطي تنفيذ الاستعلام.</div>';return}
+    var matches=readRecords().filter(function(r){return clean(r&&(r.phone||r.parentPhone||r.statusPhone||r.parent_phone||r.guardianPhone))===phone});
+    if(!matches.length){box.innerHTML='<div class="progressEmpty red">لا توجد بيانات مرتبطة بهذا الرقم.<br>تأكدي من الرقم ثم أعيدي الاستعلام.</div>';return}
+    var active=matches.filter(function(r){return !isFail(calc(r).status)&&calc(r).status!=='ملغي'}).length;
+    var nextText=matches.map(function(r){return calc(r).next}).filter(function(x){return x&&x!=='تم الوصول للفوز'&&x.indexOf('لم ينتقل')!==0&&x!=='تم إلغاء المتسابق'})[0]||'لا توجد مرحلة تالية نشطة';
+    box.innerHTML='<div class="progressInquiryWrap"><div class="progressInquiryHead"><div class="title">بطاقة الاستعلام الرسمية</div><div class="sub">شريط تقدم واضح نحو الفوز لكل متسابق/ة</div></div><div class="progressSummaryGrid"><div class="progressMiniBox"><div class="k">رقم ولي الأمر</div><div class="v">'+esc(phoneEl.value)+'</div></div><div class="progressMiniBox"><div class="k">عدد المتسابقين</div><div class="v">'+matches.length+' متسابق/ة</div></div><div class="progressMiniBox"><div class="k">نشط</div><div class="v">'+active+'</div></div><div class="progressMiniBox"><div class="k">التقدم</div><div class="v">نحو الفوز</div></div></div>'+matches.map(card).join('')+'</div>';
+  }
+  function bind(){
+    var btn=$('checkStatusBtn');if(btn){btn.addEventListener('click',function(e){e.preventDefault();e.stopImmediatePropagation();render();return false},true);btn.onclick=function(e){if(e){e.preventDefault();e.stopImmediatePropagation()}render();return false}}
+    var phone=$('statusPhone');if(phone){phone.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();render()}},true)}
+    var box=$('statusResult');if(box){box.className='finalMasarProgressInquiry';box.innerHTML='<div class="progressEmpty">سيظهر هنا الاستعلام المنظم مع شريط التقدم بعد إدخال رقم ولي الأمر.</div>'}
+    window.renderMasarVipInquiry=render;window.renderMasarProgressInquiry=render;
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);else bind();
+})();
+</script>
+
+
+<!-- ===== إصلاح نهائي مؤكد لواجهة الاستعلام: بدون إعلام + شريط تقدم بارز ===== -->
+<style id="masar-inquiry-definitive-style">
+#statusResult.masarFinalInquiry{border:0!important;background:transparent!important;padding:0!important;box-shadow:none!important;min-height:auto!important;overflow:visible!important;color:#274653!important}
+.mfiWrap{border-radius:30px;overflow:hidden;background:linear-gradient(180deg,#fffdf9 0%,#fff8ef 100%);border:1px solid rgba(201,161,95,.28);box-shadow:0 22px 46px rgba(39,70,83,.13)}
+.mfiHead{padding:18px 14px;background:linear-gradient(135deg,#274653 0%,#567e86 52%,#c9a15f 100%);color:#fff;text-align:center;position:relative;overflow:hidden}
+.mfiHead:after{content:"";position:absolute;top:0;left:-120%;width:42%;height:100%;background:rgba(255,255,255,.18);transform:skewX(-24deg);animation:vipSweep 5s linear infinite;pointer-events:none}
+.mfiTitle{font-size:21px;font-weight:1000;line-height:1.7;color:#fff}.mfiSub{font-size:12px;font-weight:900;line-height:1.8;color:rgba(255,255,255,.92)}
+.mfiSummary{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;padding:12px;background:rgba(255,255,255,.65)}
+.mfiMini{border-radius:18px;background:#fff;border:1px solid rgba(0,0,0,.06);padding:11px 8px;text-align:center;box-shadow:0 8px 18px rgba(39,70,83,.05)}
+.mfiMini .k{font-size:11px;color:#6b7280;font-weight:1000;margin-bottom:5px}.mfiMini .v{font-size:15px;color:#274653;font-weight:1000;line-height:1.6}
+.mfiStudent{margin:12px;border-radius:25px;background:#fff;border:1px solid rgba(0,0,0,.08);overflow:hidden;box-shadow:0 14px 28px rgba(39,70,83,.08)}
+.mfiStudentTop{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px;background:linear-gradient(135deg,#f7eee4,#fffaf3);border-bottom:1px solid rgba(0,0,0,.06)}
+.mfiName{min-width:0;color:#274653;font-size:16px;font-weight:1000;line-height:1.6;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mfiGrade{color:#6b7280;font-size:12px;font-weight:1000;margin-top:2px}
+.mfiPill{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-width:104px;padding:8px 12px;border-radius:999px;font-size:12px;font-weight:1000;border:1px solid transparent;white-space:nowrap;line-height:1.5}.mfiPill .dot{width:8px;height:8px;border-radius:50%;background:currentColor;display:inline-block}.mfiGreen{background:#ecfdf3;color:#166534;border-color:#bbf7d0}.mfiYellow{background:#fff7ed;color:#9a5b00;border-color:#fed7aa}.mfiRed{background:#fef2f2;color:#991b1b;border-color:#fecaca}.mfiBlue{background:#eff6ff;color:#1e3a8a;border-color:#bfdbfe}.mfiGray{background:#f8fafc;color:#475569;border-color:#e2e8f0}
+.mfiProgressBox{margin:12px;padding:15px;border-radius:22px;background:linear-gradient(135deg,rgba(39,70,83,.07),rgba(201,161,95,.16));border:1px solid rgba(201,161,95,.24)}
+.mfiProgressTitle{display:flex;align-items:center;justify-content:space-between;gap:8px;color:#274653;font-weight:1000;font-size:14px;margin-bottom:10px}.mfiProgressTitle span:last-child{color:#9a5b00;font-size:13px}
+.mfiTrack{height:20px;border-radius:999px;background:#eef1f3;overflow:hidden;border:1px solid rgba(0,0,0,.07);box-shadow:inset 0 2px 6px rgba(0,0,0,.07)}
+.mfiFill{height:100%;border-radius:999px;background:linear-gradient(135deg,#274653,#6da2a9,#c9a15f);box-shadow:0 7px 16px rgba(39,70,83,.20);transition:width .35s ease}
+.mfiLabels{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-top:9px;color:#6b7280;font-size:9px;font-weight:1000;text-align:center}.mfiLabels span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mfiNext{margin:0 12px 12px;padding:14px;border-radius:21px;background:#fff;border:1px solid rgba(0,0,0,.06);display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;box-shadow:0 8px 16px rgba(39,70,83,.04)}
+.mfiNext .label{color:#6b7280;font-size:12px;font-weight:1000}.mfiNext .value{color:#274653;font-size:17px;font-weight:1000;line-height:1.7}
+.mfiStages{display:grid;gap:8px;padding:0 12px 12px}.mfiStage{display:grid;grid-template-columns:40px 1fr auto;gap:9px;align-items:center;border:1px solid #eef1f3;border-radius:18px;padding:11px 10px;background:linear-gradient(180deg,#fff,#fffdf9)}
+.mfiNum{width:34px;height:34px;border-radius:13px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,rgba(86,126,134,.10),rgba(201,161,95,.16));color:#274653;font-weight:1000}.mfiStageTitle{font-size:13px;color:#475569;font-weight:1000;margin-bottom:3px}.mfiStageValue{font-size:14px;color:#111827;font-weight:1000;line-height:1.6}
+.mfiEmpty{padding:16px 14px;border-radius:24px;background:linear-gradient(135deg,#fff7ed,#fffdf9);border:1px solid rgba(201,161,95,.22);box-shadow:0 12px 28px rgba(39,70,83,.08);color:#274653;text-align:center;font-weight:1000;line-height:1.9}.mfiEmpty.red{background:linear-gradient(135deg,#fef2f2,#fff7ed);border-color:rgba(153,27,27,.16);color:#7f1d1d}
+@media(max-width:520px){.mfiSummary{grid-template-columns:1fr}.mfiStudentTop{align-items:stretch;flex-direction:column;text-align:center}.mfiName{white-space:normal}.mfiNext{grid-template-columns:1fr;text-align:center}.mfiStage{grid-template-columns:36px 1fr}.mfiStage .mfiPill{grid-column:1/-1;justify-self:center;width:100%;max-width:230px}.mfiLabels{font-size:8px}}
+</style>
+<script id="masar-inquiry-definitive-script">
+(function(){
+  function $(id){return document.getElementById(id)}
+  function esc(s){return String(s==null?'':s).replace(/[&<>\"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c]})}
+  function clean(s){var x=String(s||'').replace(/\D/g,''); if(x.indexOf('966')===0) x='0'+x.slice(3); return x.trim()}
+  function readRecords(){try{if(typeof getRecords==='function'){var a=getRecords()||[]; if(Array.isArray(a)&&a.length)return a}}catch(e){} var keys=['masar_mobile_records','records','contestants','students','mathPathRecords','masarRecords']; for(var i=0;i<keys.length;i++){try{var v=JSON.parse(localStorage.getItem(keys[i])||'[]'); if(Array.isArray(v)&&v.length)return v}catch(e){}} return []}
+  function val(r,keys,fallback){for(var i=0;i<keys.length;i++){var v=r&&r[keys[i]]; if(v!==undefined&&v!==null&&String(v).trim()!=='') return String(v).trim()} return fallback||'لم يبدأ'}
+  function entered(r,k){var m=(r&&r.resultEnteredStages)||{}; if(m[k])return true; if(k==='stage1')return !!(r&&r.stageOneEntered); if(k==='stage2')return !!(r&&r.stageTwoEntered); if(k==='stage3')return !!(r&&r.stageThreeEntered); if(k==='win')return !!(r&&r.winStageEntered); return false}
+  function norm(t){t=String(t||'').trim(); if(!t)return'لم يبدأ'; if(/غير فائز/.test(t))return'لم يبدأ'; return t}
+  function stageVal(r,k){var v='لم يبدأ'; if(k==='reg')v='مسجل'; if(k==='stage1')v=val(r,['stageOne','nomination','phase1'],'لم يبدأ'); if(k==='stage2')v=entered(r,'stage2')?val(r,['stageTwo','sorting','phase2'],'لم يبدأ'):val(r,['stageTwo','sorting','phase2'],'لم يبدأ'); if(k==='stage3')v=entered(r,'stage3')?val(r,['stageThree','phase3'],'لم يبدأ'):val(r,['stageThree','phase3'],'لم يبدأ'); if(k==='win')v=entered(r,'win')?val(r,['winStage','winnerStage','win'],'لم يبدأ'):'لم يبدأ'; return norm(v)}
+  function isFail(t){return /غير مرشح|غير مجتاز|غير متأهل|مستبعد|مرفوض|ملغي|إلغاء|محذوف/.test(String(t||''))}
+  function isPass(k,t){t=String(t||''); if(k==='reg')return /مسجل|نشط/.test(t); if(k==='stage1')return /مرشح|مجتاز|متأهل|فائز/.test(t)&&!isFail(t); if(k==='stage2')return /مجتاز|متأهل|فائز/.test(t)&&!isFail(t); if(k==='stage3')return /متأهل|فائز/.test(t)&&!isFail(t); if(k==='win')return /فائز/.test(t)&&!isFail(t); return false}
+  function cls(text){var t=String(text||''); if(isFail(t))return'mfiRed'; if(/فائز|مرشح|مجتاز|متأهل|مسجل|نشط|تم/.test(t)&&!/لم|غير/.test(t))return'mfiGreen'; if(/لم يبدأ|انتظار|بانتظار|قيد|لا يوجد/.test(t))return'mfiYellow'; return'mfiBlue'}
+  function pill(text){var t=String(text||'لم يبدأ'); return '<span class="mfiPill '+cls(t)+'"><span class="dot"></span>'+esc(t)+'</span>'}
+  function calc(r){
+    if(r&&r.cancelled)return{status:'ملغي',next:'تم إلغاء المتسابق',done:0,remain:'توقفت المشاركة'};
+    var s1=stageVal(r,'stage1'),s2=stageVal(r,'stage2'),s3=stageVal(r,'stage3'),win=stageVal(r,'win');
+    if(isFail(s1))return{status:s1,next:'لم ينتقل للمرحلة الثانية',done:0,remain:'توقفت عند المرحلة الأولى'};
+    if(isFail(s2))return{status:s2,next:'لم ينتقل للمرحلة الثالثة',done:1,remain:'توقفت عند المرحلة الثانية'};
+    if(isFail(s3))return{status:s3,next:'لم ينتقل لمرحلة الفوز',done:2,remain:'توقفت عند المرحلة الثالثة'};
+    if(isPass('win',win))return{status:'فائز',next:'تم الوصول للفوز',done:4,remain:'اكتمل المسار'};
+    if(isPass('stage3',s3))return{status:s3,next:'مرحلة الفوز',done:3,remain:'تبقى خطوة واحدة على الفوز'};
+    if(isPass('stage2',s2))return{status:s2,next:'المرحلة الثالثة',done:2,remain:'تبقى خطوتان على الفوز'};
+    if(isPass('stage1',s1))return{status:s1,next:'المرحلة الثانية',done:1,remain:'تبقى 3 خطوات على الفوز'};
+    return{status:'مسجل',next:'المرحلة الأولى',done:0,remain:'تبقى 4 خطوات على الفوز'};
+  }
+  function stageRow(n,title,value){return '<div class="mfiStage"><div class="mfiNum">'+n+'</div><div><div class="mfiStageTitle">'+esc(title)+'</div><div class="mfiStageValue">'+esc(value)+'</div></div>'+pill(value)+'</div>'}
+  function studentCard(r){
+    var name=val(r,['name','studentName','fullName'],'بدون اسم'), grade=val(r,['grade','className','class','level'],'غير محدد');
+    var s1=stageVal(r,'stage1'),s2=stageVal(r,'stage2'),s3=stageVal(r,'stage3'),win=stageVal(r,'win'), c=calc(r), pct=Math.max(0,Math.min(100,(c.done/4)*100));
+    return '<div class="mfiStudent"><div class="mfiStudentTop"><div><div class="mfiName">'+esc(name)+'</div><div class="mfiGrade">الصف: '+esc(grade)+'</div></div>'+pill(c.status)+'</div><div class="mfiProgressBox"><div class="mfiProgressTitle"><span>شريط التقدم نحو الفوز</span><span>'+esc(c.remain)+'</span></div><div class="mfiTrack"><div class="mfiFill" style="width:'+pct+'%"></div></div><div class="mfiLabels"><span>تسجيل</span><span>الأولى</span><span>الثانية</span><span>الثالثة</span><span>الفوز</span></div></div><div class="mfiStages">'+stageRow('0','حالة التسجيل','مسجل')+stageRow('1','المرحلة الأولى',s1)+stageRow('2','المرحلة الثانية',s2)+stageRow('3','المرحلة الثالثة',s3)+stageRow('4','مرحلة الفوز',win)+'</div></div>';
+  }
+  function render(){
+    var phoneEl=$('statusPhone'), box=$('statusResult'); if(!phoneEl||!box)return;
+    var phone=clean(phoneEl.value); box.className='masarFinalInquiry';
+    if(!phone){box.innerHTML='<div class="mfiEmpty">أدخلي رقم ولي الأمر أولًا ثم اضغطي تنفيذ الاستعلام.</div>';return}
+    var matches=readRecords().filter(function(r){return clean(r&&(r.phone||r.parentPhone||r.statusPhone||r.parent_phone||r.guardianPhone))===phone});
+    if(!matches.length){box.innerHTML='<div class="mfiEmpty red">لا توجد بيانات مرتبطة بهذا الرقم.<br>تأكدي من الرقم ثم أعيدي الاستعلام.</div>';return}
+    var nextCounts={}; matches.forEach(function(r){var n=calc(r).next; nextCounts[n]=(nextCounts[n]||0)+1});
+    var commonNext=Object.keys(nextCounts).sort(function(a,b){return nextCounts[b]-nextCounts[a]})[0]||'المرحلة الأولى';
+    box.innerHTML='<div class="mfiWrap"><div class="mfiHead"><div class="mfiTitle">بطاقة الاستعلام الرسمية</div><div class="mfiSub">شريط تقدم واضح نحو الفوز لكل متسابق/ة</div></div><div class="mfiSummary"><div class="mfiMini"><div class="k">رقم ولي الأمر</div><div class="v">'+esc(phoneEl.value)+'</div></div><div class="mfiMini"><div class="k">عدد المتسابقين</div><div class="v">'+matches.length+' متسابق/ة</div></div><div class="mfiMini"><div class="k">التقدم</div><div class="v">نحو الفوز</div></div><div class="mfiMini"><div class="k">الشريط</div><div class="v">ظاهر وواضح</div></div></div>'+matches.map(studentCard).join('')+'</div>';
+  }
+  function bind(){
+    var btn=$('checkStatusBtn');
+    if(btn){var b=btn.cloneNode(true);btn.parentNode.replaceChild(b,btn);b.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();render();return false},true)}
+    var phone=$('statusPhone'); if(phone&&!phone._mfiFinal){phone._mfiFinal=true;phone.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();render()}},true)}
+    var box=$('statusResult'); if(box){box.className='masarFinalInquiry';box.innerHTML='<div class="mfiEmpty">سيظهر هنا استعلام فخم مرتب على استايل مسار الأعداد بعد إدخال رقم ولي الأمر.</div>'}
+    window.renderMasarVipInquiry=render;
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);else bind();
+  window.addEventListener('load',function(){bind();setTimeout(bind,500);setTimeout(bind,1500)});
 })();
 </script>
 
@@ -7368,3 +7796,280 @@ document.addEventListener('click', function(e){
 #ctrlCancelStudentSelect,#mctrlCancelStudentSelect{min-height:52px;background:#fffdfa;border:1px solid rgba(39,70,83,.16);font-weight:900;color:#274653}
 #tabCancelStudent .serviceButtons,#mTabCancelStudent .serviceButtons{margin-bottom:28px!important}
 </style>
+
+<!-- ===== FINAL VIP MASAR INQUIRY OVERRIDE: جدول استعلام فخم وملزم ===== -->
+<style id="final-masar-inquiry-vip-style">
+#statusResult.finalMasarInquiry{
+  margin-top:16px!important;
+  padding:0!important;
+  border:0!important;
+  background:transparent!important;
+  color:#274653!important;
+  line-height:normal!important;
+}
+.masarInquiryHero{
+  position:relative;
+  overflow:hidden;
+  border-radius:26px;
+  background:linear-gradient(180deg,#fffdf9 0%,#fff7ed 100%);
+  border:1px solid rgba(201,161,95,.25);
+  box-shadow:0 20px 44px rgba(39,70,83,.12);
+}
+.masarInquiryHero:before{
+  content:"";position:absolute;top:-80px;right:-80px;width:190px;height:190px;border-radius:50%;
+  background:rgba(201,161,95,.16);pointer-events:none;
+}
+.masarInquiryHero:after{
+  content:"";position:absolute;left:-85px;bottom:-85px;width:200px;height:200px;border-radius:50%;
+  background:rgba(86,126,134,.12);pointer-events:none;
+}
+.masarInquiryTop{
+  position:relative;z-index:1;
+  padding:16px 14px;
+  background:linear-gradient(135deg,#274653 0%,#567e86 48%,#c9a15f 100%);
+  color:#fff;text-align:center;
+}
+.masarInquiryTop .title{font-size:20px;font-weight:1000;line-height:1.7;margin:0;color:#fff}
+.masarInquiryTop .sub{font-size:12px;font-weight:800;color:rgba(255,255,255,.9);line-height:1.8;margin-top:3px}
+.masarInquirySummaryGrid{position:relative;z-index:1;display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px;background:rgba(255,255,255,.62)}
+.masarMiniBox{background:#fff;border:1px solid rgba(0,0,0,.06);border-radius:17px;padding:10px 8px;text-align:center;box-shadow:0 8px 18px rgba(39,70,83,.05)}
+.masarMiniBox .k{font-size:11px;font-weight:1000;color:#6b7280;margin-bottom:5px}
+.masarMiniBox .v{font-size:15px;font-weight:1000;color:#274653;line-height:1.6}
+.masarStudentCard{position:relative;z-index:1;margin:12px;border-radius:22px;background:#fff;border:1px solid rgba(0,0,0,.08);overflow:hidden;box-shadow:0 12px 24px rgba(39,70,83,.07)}
+.masarStudentHead{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px;background:linear-gradient(135deg,#f7eee4,#fffaf3);border-bottom:1px solid rgba(0,0,0,.06)}
+.masarStudentName{min-width:0;color:#274653;font-size:15px;font-weight:1000;line-height:1.6;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.masarInquiryTableWrap{overflow:auto;background:#fff}
+.masarInquiryTable{width:100%;min-width:420px;border-collapse:collapse}
+.masarInquiryTable th,.masarInquiryTable td{padding:12px 9px;border-bottom:1px solid #edf0f2;text-align:center;font-size:12px;line-height:1.8;vertical-align:middle}
+.masarInquiryTable th{background:#fbf6ef;color:#5f433a;font-weight:1000;white-space:nowrap}
+.masarInquiryTable td:first-child{color:#475569;font-weight:1000;white-space:nowrap}
+.masarInquiryTable td:nth-child(2){color:#1f2937;font-weight:900}
+.masarStatusPill{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:104px;padding:7px 10px;border-radius:999px;font-size:12px;font-weight:1000;border:1px solid transparent;line-height:1.45;white-space:nowrap}
+.masarStatusPill .dot{width:8px;height:8px;border-radius:50%;background:currentColor;display:inline-block;flex:0 0 auto}
+.masarGreen{background:#ecfdf3;color:#166534;border-color:#bbf7d0}
+.masarYellow{background:#fff7ed;color:#9a5b00;border-color:#fed7aa}
+.masarRed{background:#fef2f2;color:#991b1b;border-color:#fecaca}
+.masarBlue{background:#eff6ff;color:#1e3a8a;border-color:#bfdbfe}
+.masarGray{background:#f8fafc;color:#475569;border-color:#e2e8f0}
+.masarInquiryEmpty{padding:16px 14px;border-radius:23px;background:linear-gradient(135deg,#fff7ed,#fffdf9);border:1px solid rgba(201,161,95,.22);box-shadow:0 12px 28px rgba(39,70,83,.08);color:#274653;text-align:center;font-weight:1000;line-height:1.9}
+.masarInquiryEmpty.red{background:linear-gradient(135deg,#fef2f2,#fff7ed);border-color:rgba(153,27,27,.16);color:#7f1d1d}
+@media(max-width:520px){
+  .masarInquirySummaryGrid{grid-template-columns:1fr}
+  .masarStudentHead{align-items:stretch;flex-direction:column;text-align:center}
+  .masarStudentName{white-space:normal}
+  .masarInquiryTable{min-width:360px}
+}
+</style>
+<script id="final-masar-inquiry-vip-script">
+(function(){
+  function $(id){return document.getElementById(id)}
+  function esc(v){return String(v==null?'':v).replace(/[&<>'"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]})}
+  function clean(v){
+    var s=String(v||'').replace(/\D/g,'');
+    if(s.indexOf('00966')===0) s='0'+s.slice(5);
+    if(s.indexOf('966')===0) s='0'+s.slice(3);
+    if(s.length===9 && s.charAt(0)==='5') s='0'+s;
+    return s;
+  }
+  function norm(v){return String(v||'').replace(/\s+/g,' ').trim()}
+  function readRecords(){
+    try{ if(typeof window.getRecords==='function'){ var r=window.getRecords(); if(Array.isArray(r)) return r; } }catch(e){}
+    var keys=['masar_mobile_records','records','contestants','students','mathPathRecords','masarRecords'];
+    for(var i=0;i<keys.length;i++){
+      try{ var arr=JSON.parse(localStorage.getItem(keys[i])||'[]'); if(Array.isArray(arr) && arr.length) return arr; }catch(e){}
+    }
+    return [];
+  }
+  function get(r, keys, fallback){
+    for(var i=0;i<keys.length;i++){
+      var v=r && r[keys[i]];
+      if(v!==undefined && v!==null && norm(v)!=='') return norm(v);
+    }
+    return fallback||'لم يحدد';
+  }
+  function getName(r){return get(r,['name','studentName','contestantName','registerName'],'بدون اسم')}
+  function getGrade(r){return get(r,['grade','className','studentClass','class'],'لم يحدد')}
+  function overall(r){
+    try{ if(typeof window.getStatusLabel==='function') return window.getStatusLabel(r); }catch(e){}
+    if(r && (r.cancelled || r.isCancelled || r.status==='cancelled' || r.cancelReason)) return 'ملغي';
+    return get(r,['status','contestantStatus'],'نشط');
+  }
+  function kind(text){
+    var t=norm(text);
+    if(/غير مرشح|غير مجتاز|غير متأهل|غير فائز|ملغي|مستبعد|مرفوض|محذوف|إلغاء|حذف/.test(t)) return 'masarRed';
+    if(/انتظار|بانتظار|قيد|تحت|لم يحدد|لم تحدد|لا يوجد|لم يتم/.test(t)) return 'masarYellow';
+    if(/مرشح|مجتاز|متأهل|فائز|نشط|تم|مقبول|مؤهل|مسجل/.test(t)) return 'masarGreen';
+    return 'masarBlue';
+  }
+  function pill(text, cls){
+    cls=cls||kind(text);
+    var icon=cls==='masarGreen'?'🟢':cls==='masarRed'?'🔴':cls==='masarYellow'?'🟡':'🔵';
+    return '<span class="masarStatusPill '+cls+'"><span class="dot"></span>'+icon+' '+esc(text||'لم يحدد')+'</span>';
+  }
+  function notify(r){
+    var alerts=Array.isArray(r&&r.parentAlerts)?r.parentAlerts:[];
+    var n=(r&&r.notifications)||{};
+    var sent=false,last='';
+    ['stage1','stage2','stage3','win'].forEach(function(k){if(n[k]&&n[k].sent){sent=true;last=n[k].at||last}});
+    if(alerts.length){sent=true;last=(alerts[alerts.length-1]&&alerts[alerts.length-1].at)||last}
+    return sent?('تم إرسال إعلام لولي الأمر'+(last?' - '+last:'')):'لم يتم إرسال أي إعلام حتى الآن';
+  }
+  function studentCard(r){
+    var name=getName(r), grade=getGrade(r), status=overall(r);
+    var p1=get(r,['stageOne','nomination','phase1','stage1'],'بانتظار الفرز');
+    var p2=get(r,['stageTwo','sorting','phase2','stage2'],'بانتظار الفرز');
+    var p3=get(r,['stageThree','final','phase3','stage3'],'بانتظار النهائي');
+    var win=get(r,['winStage','win','winner','winResult'],'غير فائز');
+    var cancel=get(r,['cancelReason','cancel_reason','reason'],'لا يوجد');
+    var notification=notify(r);
+    var rows=[
+      ['اسم الطالب/ة',name,pill('بيانات صحيحة','masarBlue')],
+      ['الصف',grade,pill('مسجل','masarGreen')],
+      ['المرحلة الأولى',p1,pill(p1)],
+      ['المرحلة الثانية',p2,pill(p2)],
+      ['المرحلة الثالثة',p3,pill(p3)],
+      ['مرحلة الفوز',win,pill(win)],
+      ['حالة المتسابق',status,pill(status)],
+      ['سبب الإلغاء',cancel,pill(cancel)],
+      ['الإعلام',notification,pill(notification)]
+    ];
+    return '<div class="masarStudentCard"><div class="masarStudentHead"><div class="masarStudentName">👤 '+esc(name)+'</div><div>'+pill(status)+'</div></div><div class="masarInquiryTableWrap"><table class="masarInquiryTable"><thead><tr><th>البيان</th><th>التفاصيل</th><th>المؤشر</th></tr></thead><tbody>'+rows.map(function(row){return '<tr><td>'+esc(row[0])+'</td><td>'+esc(row[1])+'</td><td>'+row[2]+'</td></tr>'}).join('')+'</tbody></table></div></div>';
+  }
+  function render(){
+    var phoneEl=$('statusPhone'), box=$('statusResult');
+    if(!phoneEl||!box) return;
+    var phone=clean(phoneEl.value);
+    box.className='finalMasarInquiry';
+    if(!phone){box.innerHTML='<div class="masarInquiryEmpty">🟡 أدخلي رقم ولي الأمر أولًا ثم اضغطي تنفيذ الاستعلام.</div>';return;}
+    var all=readRecords();
+    var matches=all.filter(function(r){return clean(r&&(r.phone||r.parentPhone||r.statusPhone||r.parent_phone||r.guardianPhone))===phone});
+    if(!matches.length){box.innerHTML='<div class="masarInquiryEmpty red">🔴 لا توجد بيانات مرتبطة بهذا الرقم.<br>تأكدي من الرقم ثم أعيدي الاستعلام.</div>';return;}
+    var active=matches.filter(function(r){return !/ملغي|مستبعد|محذوف|مرفوض/.test(overall(r))}).length;
+    box.innerHTML='<div class="masarInquiryHero"><div class="masarInquiryTop"><div class="title">📋 بطاقة الاستعلام الرسمية</div><div class="sub">بيانات المتسابقين المرتبطين برقم ولي الأمر</div></div><div class="masarInquirySummaryGrid"><div class="masarMiniBox"><div class="k">رقم ولي الأمر</div><div class="v">'+esc(phoneEl.value)+'</div></div><div class="masarMiniBox"><div class="k">عدد المتسابقين</div><div class="v">'+matches.length+' متسابق/ة</div></div><div class="masarMiniBox"><div class="k">نشط</div><div class="v">🟢 '+active+'</div></div><div class="masarMiniBox"><div class="k">بحاجة متابعة</div><div class="v">🟡 '+(matches.length-active)+'</div></div></div>'+matches.map(studentCard).join('')+'</div>';
+  }
+  function bind(){
+    var btn=$('checkStatusBtn');
+    if(!btn) return;
+    var newBtn=btn.cloneNode(true);
+    btn.parentNode.replaceChild(newBtn,btn);
+    newBtn.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();render();return false},true);
+    var phone=$('statusPhone');
+    if(phone){phone.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();render();}},true)}
+    var box=$('statusResult');
+    if(box){box.className='finalMasarInquiry';box.innerHTML='<div class="masarInquiryEmpty">✨ سيظهر هنا جدول استعلام مرتب بعد إدخال رقم ولي الأمر والضغط على تنفيذ الاستعلام.</div>';}
+    window.renderMasarVipInquiry=render;
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',bind); else bind();
+  setTimeout(bind,500);
+})();
+</script>
+
+
+<!-- ===== إصلاح نهائي لترتيب واجهة الاستعلام بدون تكرار ===== -->
+<style id="masar-inquiry-clean-vip-style">
+#statusResult.finalMasarInquiry{border:0!important;background:transparent!important;padding:0!important;box-shadow:none!important;min-height:auto!important;overflow:visible!important}
+.masarInquiryHero.cleanVip{border-radius:28px;overflow:hidden;background:linear-gradient(180deg,#fffdf9 0%,#fff8ef 100%);border:1px solid rgba(201,161,95,.24);box-shadow:0 18px 38px rgba(39,70,83,.10)}
+.masarInquiryHero.cleanVip .masarInquiryTop{padding:16px 14px;background:linear-gradient(135deg,#274653,#567e86,#c9a15f);color:#fff;text-align:center;position:relative;overflow:hidden}
+.masarInquiryHero.cleanVip .masarInquiryTop:after{content:"";position:absolute;top:0;left:-120%;width:42%;height:100%;background:rgba(255,255,255,.18);transform:skewX(-24deg);animation:vipSweep 5s linear infinite;pointer-events:none}
+.masarInquiryHero.cleanVip .title{font-size:20px;font-weight:1000;line-height:1.7;margin:0;color:#fff}
+.masarInquiryHero.cleanVip .sub{font-size:12px;font-weight:900;line-height:1.8;margin-top:3px;color:rgba(255,255,255,.92)}
+.cleanSummaryGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;padding:12px;background:rgba(255,255,255,.62)}
+.cleanMiniBox{border-radius:18px;background:#fff;border:1px solid rgba(0,0,0,.06);padding:10px 8px;text-align:center;box-shadow:0 8px 18px rgba(39,70,83,.05)}
+.cleanMiniBox .k{font-size:11px;color:#6b7280;font-weight:1000;margin-bottom:5px}.cleanMiniBox .v{font-size:15px;color:#274653;font-weight:1000;line-height:1.6}
+.cleanStudentCard{margin:12px;border-radius:23px;background:#fff;border:1px solid rgba(0,0,0,.08);overflow:hidden;box-shadow:0 12px 24px rgba(39,70,83,.07)}
+.cleanStudentHead{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px;background:linear-gradient(135deg,#f7eee4,#fffaf3);border-bottom:1px solid rgba(0,0,0,.06)}
+.cleanStudentName{min-width:0;color:#274653;font-size:16px;font-weight:1000;line-height:1.6;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.cleanStudentGrade{color:#6b7280;font-size:12px;font-weight:1000;margin-top:2px}
+.cleanStatusPill{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-width:94px;padding:7px 11px;border-radius:999px;font-size:12px;font-weight:1000;border:1px solid transparent;line-height:1.45;white-space:nowrap}.cleanStatusPill .dot{width:8px;height:8px;border-radius:50%;background:currentColor;display:inline-block}.cleanGreen{background:#ecfdf3;color:#166534;border-color:#bbf7d0}.cleanYellow{background:#fff7ed;color:#9a5b00;border-color:#fed7aa}.cleanRed{background:#fef2f2;color:#991b1b;border-color:#fecaca}.cleanBlue{background:#eff6ff;color:#1e3a8a;border-color:#bfdbfe}.cleanGray{background:#f8fafc;color:#475569;border-color:#e2e8f0}
+.cleanTimeline{display:grid;gap:9px;padding:12px;background:#fff}.cleanStep{display:grid;grid-template-columns:44px 1fr auto;gap:10px;align-items:center;border:1px solid #eef1f3;border-radius:18px;padding:11px 10px;background:linear-gradient(180deg,#fff,#fffdf9)}.cleanStepIcon{width:36px;height:36px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,rgba(86,126,134,.10),rgba(201,161,95,.16));font-size:18px}.cleanStepTitle{font-size:13px;color:#475569;font-weight:1000;margin-bottom:3px}.cleanStepValue{font-size:14px;color:#111827;font-weight:1000;line-height:1.6}.cleanInfoBar{margin:0 12px 12px;padding:11px 13px;border-radius:17px;background:linear-gradient(135deg,rgba(86,126,134,.08),rgba(201,161,95,.14));border:1px solid rgba(201,161,95,.20);color:#274653;font-size:13px;font-weight:1000;line-height:1.8;text-align:center}
+.masarInquiryEmpty.clean{padding:16px 14px;border-radius:23px;background:linear-gradient(135deg,#fff7ed,#fffdf9);border:1px solid rgba(201,161,95,.22);box-shadow:0 12px 28px rgba(39,70,83,.08);color:#274653;text-align:center;font-weight:1000;line-height:1.9}.masarInquiryEmpty.clean.red{background:linear-gradient(135deg,#fef2f2,#fff7ed);border-color:rgba(153,27,27,.16);color:#7f1d1d}
+@media(max-width:520px){.cleanSummaryGrid{grid-template-columns:1fr}.cleanStudentHead{align-items:stretch;flex-direction:column;text-align:center}.cleanStudentName{white-space:normal}.cleanStep{grid-template-columns:38px 1fr}.cleanStep .cleanStatusPill{grid-column:1 / -1;justify-self:center;width:100%;max-width:220px}.cleanStepIcon{width:34px;height:34px}}
+</style>
+<script id="masar-inquiry-clean-vip-script">
+(function(){
+  if(window.__masarInquiryCleanVipFinal) return; window.__masarInquiryCleanVipFinal=true;
+  function $(id){return document.getElementById(id)}
+  function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+  function clean(s){return String(s||'').replace(/\D/g,'').replace(/^966/,'0').trim()}
+  function readRecords(){
+    try{ if(typeof getRecords==='function') return getRecords()||[]; }catch(e){}
+    var keys=['masar_mobile_records','records','contestants','students','mathPathRecords','masarRecords'];
+    for(var i=0;i<keys.length;i++){try{var v=JSON.parse(localStorage.getItem(keys[i])||'[]'); if(Array.isArray(v)&&v.length) return v;}catch(e){}}
+    return [];
+  }
+  function stageCls(text){
+    var t=String(text||'');
+    if(/فائز|مرشح|مجتاز|متأهل|نشط|مقبول|مسجل|تم/.test(t) && !/غير|لم/.test(t)) return 'cleanGreen';
+    if(/غير|ملغي|مستبعد|مرفوض|محذوف|إلغاء|حذف/.test(t)) return 'cleanRed';
+    if(/انتظار|بانتظار|قيد|لم يبدأ|لم يبد|لم يتم|لا يوجد|لم تحدد|لم يحدد/.test(t)) return 'cleanYellow';
+    return 'cleanBlue';
+  }
+  function pill(text, cls){cls=cls||stageCls(text);return '<span class="cleanStatusPill '+cls+'"><span class="dot"></span>'+esc(text||'لم يبدأ')+'</span>'}
+  function val(r, keys, fallback){for(var i=0;i<keys.length;i++){var v=r&&r[keys[i]]; if(v!==undefined && v!==null && String(v).trim()!=='') return String(v).trim();} return fallback||'لم يبدأ'}
+  function entered(r,k){var m=(r&&r.resultEnteredStages)||{}; if(m[k]) return true; if(k==='stage1') return !!(r&&r.stageOneEntered); if(k==='stage2') return !!(r&&r.stageTwoEntered); if(k==='stage3') return !!(r&&r.stageThreeEntered); if(k==='win') return !!(r&&r.winStageEntered); return false}
+  function stageVal(r,k){
+    if(k==='stage1') return val(r,['stageOne','nomination','phase1'],'لم يبدأ');
+    if(k==='stage2') return val(r,['stageTwo','sorting','phase2'],'لم يبدأ');
+    if(k==='stage3') return val(r,['stageThree','phase3'],'لم يبدأ');
+    if(k==='win'){
+      if(!entered(r,'win')) return 'لم يبدأ';
+      return val(r,['winStage','winnerStage','win'],'لم يبدأ');
+    }
+    return 'لم يبدأ';
+  }
+  function overall(r){
+    if(r&&r.cancelled) return 'ملغي';
+    var cancel=val(r,['cancelReason','reasonCancel','deleteReason'],'');
+    if(cancel) return 'ملغي';
+    var w=stageVal(r,'win');
+    if(w==='فائز') return 'فائز';
+    var s3=stageVal(r,'stage3'), s2=stageVal(r,'stage2'), s1=stageVal(r,'stage1');
+    if(/غير/.test(s3)) return s3;
+    if(/متأهل|مجتاز|مرشح/.test(s3)) return s3;
+    if(/غير/.test(s2)) return s2;
+    if(/مجتاز|مرشح/.test(s2)) return s2;
+    if(/غير/.test(s1)) return s1;
+    return s1 || 'قيد التسجيل';
+  }
+  function notificationText(r){
+    var alerts=(r&&r.parentAlerts)||[];
+    var sent=r&&r.notifications&&Object.keys(r.notifications).some(function(k){return r.notifications[k]&&r.notifications[k].sent});
+    if(alerts.length||sent) return 'تم الإرسال';
+    return 'لم يتم إرسال أي إعلام حتى الآن';
+  }
+  function step(icon,title,value){return '<div class="cleanStep"><div class="cleanStepIcon">'+icon+'</div><div><div class="cleanStepTitle">'+esc(title)+'</div><div class="cleanStepValue">'+esc(value)+'</div></div>'+pill(value)+'</div>'}
+  function card(r){
+    var name=val(r,['name','studentName','fullName'],'بدون اسم');
+    var grade=val(r,['grade','className','class','level'],'غير محدد');
+    var status=overall(r);
+    var cancel=val(r,['cancelReason','reasonCancel','deleteReason'],'لا يوجد');
+    var notify=notificationText(r);
+    var html='';
+    html+=step('📝','حالة التسجيل','مسجل');
+    html+=step('1️⃣','المرحلة الأولى',stageVal(r,'stage1'));
+    html+=step('2️⃣','المرحلة الثانية',stageVal(r,'stage2'));
+    html+=step('3️⃣','المرحلة الثالثة',stageVal(r,'stage3'));
+    html+=step('🏆','مرحلة الفوز',stageVal(r,'win'));
+    html+=step('📌','حالة المتسابق',status);
+    html+=step('🚫','سبب الإلغاء',cancel);
+    html+=step('📣','الإعلام',notify);
+    return '<div class="cleanStudentCard"><div class="cleanStudentHead"><div><div class="cleanStudentName">👤 '+esc(name)+'</div><div class="cleanStudentGrade">الصف: '+esc(grade)+'</div></div><div>'+pill(status)+'</div></div><div class="cleanTimeline">'+html+'</div><div class="cleanInfoBar">كل حالة تظهر بمؤشر واحد فقط: أخضر للمنجز، أصفر للانتظار أو لم يبدأ، أحمر للرفض أو الإلغاء.</div></div>';
+  }
+  function render(){
+    var phoneEl=$('statusPhone'), box=$('statusResult'); if(!phoneEl||!box) return;
+    var phone=clean(phoneEl.value); box.className='finalMasarInquiry';
+    if(!phone){box.innerHTML='<div class="masarInquiryEmpty clean">🟡 أدخلي رقم ولي الأمر أولًا ثم اضغطي تنفيذ الاستعلام.</div>';return;}
+    var matches=readRecords().filter(function(r){return clean(r&&(r.phone||r.parentPhone||r.statusPhone||r.parent_phone||r.guardianPhone))===phone});
+    if(!matches.length){box.innerHTML='<div class="masarInquiryEmpty clean red">🔴 لا توجد بيانات مرتبطة بهذا الرقم.<br>تأكدي من الرقم ثم أعيدي الاستعلام.</div>';return;}
+    var active=matches.filter(function(r){return !/ملغي|مستبعد|محذوف|مرفوض/.test(overall(r))}).length;
+    box.innerHTML='<div class="masarInquiryHero cleanVip"><div class="masarInquiryTop"><div class="title">📋 بطاقة الاستعلام الرسمية</div><div class="sub">عرض مرتب بدون تكرار للمراحل والمؤشرات</div></div><div class="cleanSummaryGrid"><div class="cleanMiniBox"><div class="k">رقم ولي الأمر</div><div class="v">'+esc(phoneEl.value)+'</div></div><div class="cleanMiniBox"><div class="k">عدد المتسابقين</div><div class="v">'+matches.length+' متسابق/ة</div></div><div class="cleanMiniBox"><div class="k">نشط</div><div class="v">🟢 '+active+'</div></div><div class="cleanMiniBox"><div class="k">بحاجة متابعة</div><div class="v">🟡 '+(matches.length-active)+'</div></div></div>'+matches.map(card).join('')+'</div>';
+  }
+  function bind(){
+    var btn=$('checkStatusBtn'); if(btn && !btn._cleanVipBound){btn._cleanVipBound=true;btn.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();render();return false},true)}
+    var phone=$('statusPhone'); if(phone && !phone._cleanVipBound){phone._cleanVipBound=true;phone.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();render();}},true)}
+    var box=$('statusResult'); if(box){box.className='finalMasarInquiry'; if(!box.dataset.cleanInit){box.dataset.cleanInit='1';box.innerHTML='<div class="masarInquiryEmpty clean">✨ سيظهر هنا جدول مرتب على استايل مسار الأعداد بعد تنفيذ الاستعلام.</div>';}}
+    window.renderMasarVipInquiry=render;
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',bind); else bind();
+  setTimeout(bind,300);setTimeout(bind,1000);
+})();
+</script>
