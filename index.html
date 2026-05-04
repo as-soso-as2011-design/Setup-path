@@ -2603,7 +2603,10 @@ function filterDeletedRecords(list){
 function getRecords(){ return filterDeletedRecords(safeRead(KEY, [])); }
 function setRecords(v){
   const before = getRecords();
-  const next = filterDeletedRecords(Array.isArray(v) ? v : []);
+  const now = Date.now();
+  const next = filterDeletedRecords(Array.isArray(v) ? v : []).map(function(r){
+    return normalizeRecordForSync(Object.assign({}, r, {__updatedMs: now, __clientId: masarClientId()}), now);
+  });
   const nextKeys = new Set(next.map(recordDeleteKey));
   const removed = before.filter(function(r){ return !nextKeys.has(recordDeleteKey(r)); });
   if(removed.length){ addDeletedRecordTombstones(removed); }
@@ -2617,6 +2620,56 @@ function getActivityLog(){ return safeRead(ACTIVITY_KEY, []); }
 function setActivityLog(v){ safeWrite(ACTIVITY_KEY, v); syncCloudDoc(CLOUD_DOCS.activity, v); }
 function getCountdownSettings(){ return safeRead(COUNTDOWN_SETTINGS_KEY, {}); }
 function setCountdownSettings(v){ safeWrite(COUNTDOWN_SETTINGS_KEY, v); syncCloudDoc(CLOUD_DOCS.countdown, v); }
+
+
+// ===== حماية تعدد المستخدمين: منع رجوع البيانات للنسخة القديمة =====
+// عند دخول عدة أجهزة في نفس الوقت لا نرفع نسخة الجهاز المحلية القديمة فوق Firebase.
+// وعند وصول تحديث لحظي قديم لا نستبدل القائمة كاملة، بل ندمج ونحافظ على أحدث تعديل لكل طالب.
+const MASAR_CLIENT_ID_KEY = 'masar_client_id_v2';
+function masarClientId(){
+  try{
+    let id = localStorage.getItem(MASAR_CLIENT_ID_KEY);
+    if(!id){ id = 'client_' + Date.now() + '_' + Math.random().toString(36).slice(2); localStorage.setItem(MASAR_CLIENT_ID_KEY,id); }
+    return id;
+  }catch(e){ return 'client_' + Date.now(); }
+}
+function recordUpdateMs(r){
+  if(!r) return 0;
+  if(typeof r.__updatedMs === 'number') return r.__updatedMs;
+  if(typeof r.updatedMs === 'number') return r.updatedMs;
+  const txt = String(r.updatedAt || r.stamp || r.createdAt || '').trim();
+  const n = Date.parse(txt);
+  return Number.isFinite(n) ? n : 0;
+}
+function normalizeRecordForSync(r, fallbackMs){
+  r = r || {};
+  const out = Object.assign({}, r, {
+    name: r.name || r.studentName || r.registerName || '',
+    phone: String(r.phone || r.parentPhone || r.statusPhone || '').replace(/\D/g,''),
+    grade: r.grade || 'غير محدد'
+  });
+  if(!out.__updatedMs) out.__updatedMs = recordUpdateMs(out) || fallbackMs || Date.now();
+  if(!out.__clientId) out.__clientId = masarClientId();
+  return out;
+}
+function mergeRecordListsPreferNewest(baseList, incomingList){
+  const deletedKeys = getDeletedRecordKeys();
+  const map = new Map();
+  function put(r){
+    if(!r) return;
+    const nr = normalizeRecordForSync(r, 0);
+    const key = recordDeleteKey(nr);
+    if(!key || deletedKeys.has(key)) return;
+    const old = map.get(key);
+    if(!old){ map.set(key, nr); return; }
+    const oldMs = recordUpdateMs(old), newMs = recordUpdateMs(nr);
+    if(newMs >= oldMs){ map.set(key, Object.assign({}, old, nr)); }
+    else { map.set(key, Object.assign({}, nr, old)); }
+  }
+  (Array.isArray(baseList)?baseList:[]).forEach(put);
+  (Array.isArray(incomingList)?incomingList:[]).forEach(put);
+  return Array.from(map.values()).filter(function(r){ return r && (r.name || r.phone) && !deletedKeys.has(recordDeleteKey(r)); });
+}
 
 async function syncCloudDoc(docId, value){
   if(!firebaseReady || !firebaseDb) return;
@@ -2639,13 +2692,14 @@ async function syncCloudDoc(docId, value){
       oldList.forEach(function(r){ if(r && !deletedKeys.has(keyOf(r))) map.set(keyOf(r), r); });
       newList.forEach(function(r){
         if(!r) return;
-        const normalized = Object.assign({}, r, {
-          name: r.name || r.studentName || r.registerName || '',
-          phone: String(r.phone || r.parentPhone || r.statusPhone || '').replace(/\D/g,''),
-          grade: r.grade || 'غير محدد'
-        });
+        const normalized = normalizeRecordForSync(r, Date.now());
         if(deletedKeys.has(keyOf(normalized))) return;
-        map.set(keyOf(normalized), Object.assign({}, map.get(keyOf(normalized)) || {}, normalized));
+        const old = map.get(keyOf(normalized));
+        if(!old || recordUpdateMs(normalized) >= recordUpdateMs(old)){
+          map.set(keyOf(normalized), Object.assign({}, old || {}, normalized));
+        }else{
+          map.set(keyOf(normalized), Object.assign({}, normalized, old));
+        }
       });
       const merged = Array.from(map.values()).filter(function(r){ return r && (r.name || r.phone) && !deletedKeys.has(keyOf(r)); });
       localStorage.setItem(KEY, JSON.stringify(merged));
@@ -2720,7 +2774,11 @@ function startFirebaseRealtimeSync(){
         if(!snap.exists) return;
         const data = snap.data() || {};
         if(!('value' in data)) return;
-        const incomingValue = (docId === CLOUD_DOCS.records) ? filterDeletedRecords(data.value) : data.value;
+        let incomingValue = (docId === CLOUD_DOCS.records) ? filterDeletedRecords(data.value) : data.value;
+        if(docId === CLOUD_DOCS.records){
+          const localValue = safeRead(localKey, []);
+          incomingValue = mergeRecordListsPreferNewest(localValue, incomingValue);
+        }
         safeWrite(localKey, incomingValue);
         refreshUiAfterFirebase();
       }, (error)=>console.error('Firebase realtime failed:', docId, error));
@@ -2759,7 +2817,7 @@ async function initFirebasePersistence(){
     firebaseReady = true;
     try{ window.firebaseReady = true; window.firebaseDb = firebaseDb; }catch(_e){}
     await hydrateAllFromFirebase();
-    pushAllLocalDataToFirebase();
+    // لا نرفع بيانات الجهاز عند فتح الموقع حتى لا يستبدل جهاز قديم التعديلات الجديدة.
     startFirebaseRealtimeSync();
     refreshUiAfterFirebase();
   }catch(error){
