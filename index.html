@@ -8766,6 +8766,166 @@ document.addEventListener('click', function(e){
 })();
 </script>
 
+
+
+<!-- ===== إصلاح عدادات جداول المراحل: المرحلة الثانية + التأهيل ===== -->
+<script id="sara-stage-table-countdown-final-fix">
+(function(){
+  if(window.__saraStageTableCountdownFinalFix) return;
+  window.__saraStageTableCountdownFinalFix = true;
+
+  function $(id){return document.getElementById(id)}
+  function readJSON(key, fallback){try{return JSON.parse(localStorage.getItem(key)||'')||fallback}catch(e){return fallback}}
+  function countdownKey(){return window.COUNTDOWN_SETTINGS_KEY || 'masar_mobile_countdown_settings'}
+  function stageKey(){return window.STAGE_SETTINGS_KEY || 'masar_mobile_stage_settings'}
+  function getC(){try{return typeof getCountdownSettings==='function'?getCountdownSettings():readJSON(countdownKey(),{})}catch(e){return readJSON(countdownKey(),{})}}
+  function setC(v){try{if(typeof setCountdownSettings==='function'){setCountdownSettings(v);return}}catch(e){} try{localStorage.setItem(countdownKey(),JSON.stringify(v||{}))}catch(e){}}
+  function getS(){try{return typeof getStageSettings==='function'?getStageSettings():readJSON(stageKey(),{})}catch(e){return readJSON(stageKey(),{})}}
+  function pad(n){return String(n).padStart(2,'0')}
+  function isDateOnly(v){return /^\d{4}-\d{2}-\d{2}$/.test(String(v||''))}
+  function startOf(v){if(!v) return ''; return isDateOnly(v) ? (v+'T00:00') : String(v)}
+  function endOf(v){if(!v) return ''; return isDateOnly(v) ? (v+'T23:59') : String(v)}
+  function ms(v, asEnd){
+    if(!v) return NaN;
+    var value = asEnd ? endOf(v) : startOf(v);
+    var t = new Date(value).getTime();
+    return Number.isNaN(t) ? NaN : t;
+  }
+  function effective(){
+    var c=getC()||{}, s=getS()||{};
+    ['stage1','stage2','stage3'].forEach(function(k){
+      var row=s[k]||{};
+      if(!c[k+'Start'] && row.start) c[k+'Start']=startOf(row.start);
+      if(!c[k] && row.end) c[k]=endOf(row.end);
+    });
+    return c;
+  }
+  function remaining(endValue, endedText){
+    if(!endValue) return 'يحدد لاحقًا';
+    var end=ms(endValue,true);
+    if(Number.isNaN(end)) return 'يحدد لاحقًا';
+    var diff=end-Date.now();
+    if(diff<=0) return endedText || '00 : 00 : 00 : 00';
+    var d=Math.floor(diff/86400000);
+    var h=Math.floor((diff%86400000)/3600000);
+    var m=Math.floor((diff%3600000)/60000);
+    var s=Math.floor((diff%60000)/1000);
+    return pad(d)+' : '+pad(h)+' : '+pad(m)+' : '+pad(s);
+  }
+  window.getStageRuntimeState=function(startValue,endValue){
+    if(!startValue || !endValue) return 'pending';
+    var st=ms(startValue,false), en=ms(endValue,true), now=Date.now();
+    if(Number.isNaN(st)||Number.isNaN(en)) return 'pending';
+    if(now<st) return 'pending';
+    if(now>en) return 'ended';
+    return 'active';
+  };
+  window.hasCountdownEnded=function(targetValue){
+    if(!targetValue) return false;
+    var t=ms(targetValue,true);
+    return !Number.isNaN(t) && Date.now()>t;
+  };
+  window.formatRemainingText=function(targetValue, endedText){
+    return remaining(targetValue, '00 : 00 : 00 : 00');
+  };
+  window.formatStageRangeCountdown=function(startValue,endValue){
+    var state=window.getStageRuntimeState(startValue,endValue);
+    if(state==='pending') return 'لم تبدأ المرحلة بعد';
+    if(state==='ended') return 'انتهت المرحلة';
+    return remaining(endValue,'انتهت المرحلة');
+  };
+
+  function setBanner(id,on){var e=$(id); if(e) e.classList.toggle('active',!!on)}
+  function applyUI(){
+    var c=effective();
+    var s1=window.getStageRuntimeState(c.stage1Start,c.stage1);
+    var s2=window.getStageRuntimeState(c.stage2Start,c.stage2);
+    var s3=window.getStageRuntimeState(c.stage3Start,c.stage3);
+
+    var map=[['stage1Btn',s1,'المرحلة الأولية'],['stage2Btn',s2,'المرحلة الثانية'],['stage3Btn',s3,'مرحلة التأهيل']];
+    map.forEach(function(x){var b=$(x[0]); if(!b)return; b.classList.toggle('disabledStage',x[1]!=='active'); b.classList.toggle('activeStage',x[1]==='active'); b.disabled=(x[1]!=='active'); b.textContent=x[2];});
+
+    if($('stage1LiveTimer')) $('stage1LiveTimer').textContent=window.formatStageRangeCountdown(c.stage1Start,c.stage1);
+    if($('stage2LiveTimer')) $('stage2LiveTimer').textContent=window.formatStageRangeCountdown(c.stage2Start,c.stage2);
+    if($('stage3LiveTimer')) $('stage3LiveTimer').textContent=window.formatStageRangeCountdown(c.stage3Start,c.stage3);
+
+    setBanner('stage1CountdownBanner', window.hasCountdownEnded(c.stage1));
+    setBanner('stage2CountdownBanner', window.hasCountdownEnded(c.stage2));
+    setBanner('stage3CountdownBanner', window.hasCountdownEnded(c.stage3));
+
+    var vip=$('homeVipStatus');
+    if(vip){
+      var txt='في انتظار المرحلة الحالية';
+      if(s1==='active') txt='المرحلة الأولية فعّالة الآن';
+      else if(s2==='active') txt='المرحلة الثانية فعّالة الآن';
+      else if(s3==='active') txt='مرحلة التأهيل فعّالة الآن';
+      else if(s3==='ended') txt='انتهت المسابقة وفي انتظار إعلان النتائج';
+      else if(s2==='ended') txt='انتهت المرحلة الثانية وجاري الانتقال إلى مرحلة التأهيل';
+      else if(s1==='ended') txt='انتهت المرحلة الأولى وجاري الانتقال إلى المرحلة الثانية';
+      vip.innerHTML='حالة المسابقة: <strong>'+txt+'</strong>';
+    }
+  }
+  window.updateStageButtonsAndPages=applyUI;
+  var oldRender=window.renderManagedCountdowns;
+  window.renderManagedCountdowns=function(){try{if(oldRender)oldRender()}catch(e){} applyUI();};
+
+  function syncFromStageSchedule(stageNum){
+    var k='stage'+stageNum;
+    var start=$(k+'Start') && $(k+'Start').value;
+    var end=$(k+'End') && $(k+'End').value;
+    if(!start && !end) return;
+    var c=getC();
+    if(start) c[k+'Start']=startOf(start);
+    if(end) c[k]=endOf(end);
+    setC(c);
+    var cs=$(k+'CountdownStartDate'), ce=$(k+'CountdownDate');
+    if(cs && start) cs.value=startOf(start);
+    if(ce && end) ce.value=endOf(end);
+    applyUI();
+  }
+
+  // عند حفظ جدول المرحلة، يتم تشغيل عدادها تلقائيًا حتى لا تبقى المرحلة الثانية أو التأهيل معلقة.
+  document.addEventListener('click',function(e){
+    var btn=e.target && e.target.closest && e.target.closest('#stage1SaveBtn,#stage2SaveBtn,#stage3SaveBtn');
+    if(!btn) return;
+    setTimeout(function(){
+      if(btn.id==='stage1SaveBtn') syncFromStageSchedule(1);
+      if(btn.id==='stage2SaveBtn') syncFromStageSchedule(2);
+      if(btn.id==='stage3SaveBtn') syncFromStageSchedule(3);
+      var msg=$('stageAdminMsg')||$('countdownAdminMsg');
+      if(msg) msg.textContent='تم حفظ جدول المرحلة وربط عداد البدء والانتهاء تلقائيًا.';
+    },80);
+  },true);
+
+  // عند حفظ عداد المرحلة من قسم العدادات، نضمن قراءة الوقت كاملة وبشكل صحيح.
+  document.addEventListener('click',function(e){
+    var btn=e.target && e.target.closest && e.target.closest('#saveStage1CountdownBtn,#saveStage2CountdownBtn,#saveStage3CountdownBtn');
+    if(!btn) return;
+    setTimeout(function(){
+      var c=getC();
+      [['1','stage1'],['2','stage2'],['3','stage3']].forEach(function(x){
+        var st=$('stage'+x[0]+'CountdownStartDate'), en=$('stage'+x[0]+'CountdownDate');
+        if(st && st.value) c[x[1]+'Start']=startOf(st.value);
+        if(en && en.value) c[x[1]]=endOf(en.value);
+      });
+      setC(c); applyUI();
+      var msg=$('countdownAdminMsg'); if(msg) msg.textContent='تم حفظ عداد المرحلة وتفعيله بنجاح.';
+    },80);
+  },true);
+
+  function init(){
+    // مزامنة أي جداول محفوظة سابقًا مع العدادات إذا كانت العدادات فارغة.
+    var c=getC(), s=getS()||{}, changed=false;
+    ['stage1','stage2','stage3'].forEach(function(k){var r=s[k]||{}; if(!c[k+'Start']&&r.start){c[k+'Start']=startOf(r.start);changed=true} if(!c[k]&&r.end){c[k]=endOf(r.end);changed=true}});
+    if(changed) setC(c);
+    applyUI();
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();
+  window.addEventListener('load',init);
+  setInterval(applyUI,1000);
+})();
+</script>
+
 </body>
 </html>
 <script id="masar-real-language-fallback">
