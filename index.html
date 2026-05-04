@@ -8382,6 +8382,390 @@ document.addEventListener('click', function(e){
 })();
 </script>
 
+
+<!-- FINAL SARA FIX: حفظ نتيجة الطالب بثبات عند دخول أكثر من جهاز -->
+<style id="sara-final-result-save-stable-style">
+  #ctrlResultMsg.resultSaveWorking,
+  #mctrlResultMsg.resultSaveWorking{
+    margin-top:14px!important;padding:13px 14px!important;border-radius:18px!important;
+    background:linear-gradient(135deg,#eff6ff,#fff7ed)!important;
+    border:1px solid rgba(59,130,246,.24)!important;color:#1e3a8a!important;
+    font-weight:1000!important;text-align:center!important;line-height:1.9!important;
+  }
+</style>
+<script id="sara-final-result-save-stable-script">
+(function(){
+  'use strict';
+  if(window.__saraFinalResultSaveStable) return;
+  window.__saraFinalResultSaveStable = true;
+
+  var STORE='masar_mobile_records';
+  var COLLECTION='masar_aladad_site';
+  var DOC='records';
+  function byId(id){return document.getElementById(id)}
+  function clean(v){
+    var s=String(v||'').replace(/\D/g,'');
+    if(s.indexOf('00966')===0) s='0'+s.slice(5);
+    if(s.indexOf('966')===0) s='0'+s.slice(3);
+    if(s.length===9 && s.charAt(0)==='5') s='0'+s;
+    return s;
+  }
+  function norm(v){return String(v==null?'':v).replace(/\s+/g,' ').trim()}
+  function readLocal(){try{return JSON.parse(localStorage.getItem(STORE)||'[]')||[]}catch(e){return []}}
+  function writeLocal(list){try{localStorage.setItem(STORE,JSON.stringify(list||[]))}catch(e){}}
+  function keyOf(r){return [clean(r&&(r.phone||r.parentPhone||r.statusPhone)), norm(r&&(r.name||r.studentName||r.registerName)), norm(r&&r.grade)].join('|')}
+  function looseKey(r){return [clean(r&&(r.phone||r.parentPhone||r.statusPhone)), norm(r&&(r.name||r.studentName||r.registerName))].join('|')}
+  function updatedMs(r){return (r&&Number(r.__updatedMs||r.updatedMs))||0}
+  function clientId(){
+    try{var k='masar_client_id_v2', id=localStorage.getItem(k); if(!id){id='client_'+Date.now()+'_'+Math.random().toString(36).slice(2); localStorage.setItem(k,id)} return id}catch(e){return 'client_'+Date.now()}
+  }
+  function normalize(r,ms){
+    r=Object.assign({},r||{});
+    r.name=r.name||r.studentName||r.registerName||'';
+    r.phone=clean(r.phone||r.parentPhone||r.statusPhone||'');
+    r.grade=r.grade||'غير محدد';
+    r.__updatedMs=Number(r.__updatedMs||r.updatedMs||ms||Date.now());
+    r.__clientId=r.__clientId||clientId();
+    return r;
+  }
+  function mergePreferNewest(a,b){
+    var map=new Map();
+    function put(r){
+      if(!r) return;
+      var nr=normalize(r,0), k=keyOf(nr);
+      if(!k || k==='||') return;
+      var old=map.get(k);
+      if(!old){map.set(k,nr);return;}
+      if(updatedMs(nr)>=updatedMs(old)) map.set(k,Object.assign({},old,nr));
+      else map.set(k,Object.assign({},nr,old));
+    }
+    (Array.isArray(a)?a:[]).forEach(put);
+    (Array.isArray(b)?b:[]).forEach(put);
+    return Array.from(map.values()).filter(function(r){return r && (r.name||r.phone)});
+  }
+  function liveRows(){
+    try{ if(typeof window.getRecords==='function'){var r=window.getRecords(); if(Array.isArray(r)&&r.length) return r;} }catch(e){}
+    return readLocal();
+  }
+  function db(){return window.firebaseDb || (typeof firebaseDb!=='undefined'?firebaseDb:null)}
+  function getVal(prefix,id){var e=byId(prefix+id); return norm(e&&e.value)}
+  function finalValue(s1,s2,s3,win){
+    if(win==='فائز') return 'فائز';
+    if(win==='غير فائز') return 'غير فائز';
+    if(s3 && s3!=='لم يبدأ') return s3;
+    if(s2 && s2!=='لم يبدأ') return s2;
+    if(s1 && s1!=='لم يبدأ') return s1;
+    return 'بانتظار النتيجة';
+  }
+  function currentSelected(prefix){
+    var sel=byId(prefix+'ResultStudentSelect');
+    var list=liveRows();
+    if(sel && sel.value){
+      var opt=sel.selectedOptions && sel.selectedOptions[0];
+      var k=(opt&&opt.dataset&&opt.dataset.key)||sel.value;
+      var p=clean((opt&&opt.dataset&&(opt.dataset.phone||''))||'');
+      var n=norm(opt&&opt.dataset&&opt.dataset.name);
+      var g=norm(opt&&opt.dataset&&opt.dataset.grade);
+      return list.find(function(r){return keyOf(r)===k}) ||
+             list.find(function(r){return p && clean(r.phone||r.parentPhone||r.statusPhone)===p && (!n || norm(r.name||r.studentName||r.registerName)===n) && (!g || norm(r.grade)===g)}) || null;
+    }
+    var phone=clean((byId(prefix+'ResultPhone')||{}).value);
+    var name=norm((byId(prefix+'ResultName')||{}).value);
+    return list.find(function(r){return phone && clean(r.phone||r.parentPhone||r.statusPhone)===phone && (!name || norm(r.name||r.studentName||r.registerName)===name)}) || null;
+  }
+  function patchFromForm(prefix, old){
+    var now=Date.now();
+    var s1=getVal(prefix,'StageOne') || old.stageOne || old.nomination || 'لم يبدأ';
+    var s2=getVal(prefix,'StageTwo') || old.stageTwo || old.sorting || 'لم يبدأ';
+    var s3=getVal(prefix,'StageThree') || old.stageThree || 'لم يبدأ';
+    var win=getVal(prefix,'WinStage') || old.winStage || 'لم يبدأ';
+    return Object.assign({}, old, {
+      stageOne:s1, nomination:s1,
+      stageTwo:s2, sorting:s2,
+      stageThree:s3,
+      winStage:win,
+      final:finalValue(s1,s2,s3,win),
+      resultNote:getVal(prefix,'ResultNote'),
+      resultEnteredStages:{stage1:!!s1,stage2:!!s2,stage3:!!s3,win:!!win},
+      stageOneEntered:!!s1, stageTwoEntered:!!s2, stageThreeEntered:!!s3, winStageEntered:!!win,
+      updatedAt:new Date().toLocaleString('ar-SA'),
+      __updatedMs:now,
+      __clientId:clientId()
+    });
+  }
+  function renderAll(){
+    ['renderTable','renderContestantsTable','renderAdminDataTables','updateAdminViews','refreshResultStudentControls'].forEach(function(fn){try{if(typeof window[fn]==='function') window[fn]()}catch(e){}});
+  }
+  function setMessage(prefix,txt,type){
+    var m=byId(prefix+'ResultMsg'); if(!m) return;
+    m.className = type==='work' ? 'notice resultSaveWorking' : (type==='ok' ? 'notice resultSaveSuccessVip' : 'notice');
+    m.textContent = txt;
+  }
+  async function fetchCloudRows(){
+    var d=db();
+    if(!d || !d.collection) return null;
+    var snap=await d.collection(COLLECTION).doc(DOC).get();
+    var data=snap.exists ? (snap.data()||{}) : {};
+    return Array.isArray(data.value)?data.value:[];
+  }
+  async function writeCloudRows(list){
+    var d=db();
+    if(!d || !d.collection) return false;
+    var payload={value:list||[], stableResultSave:true, updatedAt:new Date().toLocaleString('ar-SA')};
+    try{ if(window.firebase && firebase.firestore && firebase.firestore.FieldValue) payload.updatedAt=firebase.firestore.FieldValue.serverTimestamp(); }catch(e){}
+    await d.collection(COLLECTION).doc(DOC).set(payload,{merge:true});
+    return true;
+  }
+  async function save(prefix){
+    var rec=currentSelected(prefix);
+    if(!rec){setMessage(prefix,'اختاري الطالب/ة من القائمة أولًا، ثم اضغطي حفظ.', 'bad'); return false;}
+    setMessage(prefix,'جاري حفظ النتيجة وتثبيتها بين الأجهزة...', 'work');
+    var k=keyOf(rec), lk=looseKey(rec);
+    var local=liveRows();
+    var cloud=null;
+    try{cloud=await fetchCloudRows();}catch(e){cloud=null;}
+    var list=mergePreferNewest(local, cloud||[]);
+    var idx=list.findIndex(function(r){return keyOf(r)===k || looseKey(r)===lk});
+    if(idx<0){ list.push(normalize(rec,Date.now())); idx=list.length-1; }
+    list[idx]=patchFromForm(prefix, list[idx]);
+    writeLocal(list);
+    renderAll();
+    var cloudOk=false;
+    try{cloudOk=await writeCloudRows(list);}catch(e){cloudOk=false; console.warn('stable result save cloud failed',e);}
+    // نعيد كتابة النسخة المحلية بعد السحابة حتى لا يعيد التحديث اللحظي نسخة أقدم.
+    writeLocal(list);
+    renderAll();
+    var sel=byId(prefix+'ResultStudentSelect'); if(sel) sel.value=keyOf(list[idx]);
+    setMessage(prefix, cloudOk ? '✅ تم حفظ النتيجة وتثبيتها في جدول المتسابقين.' : '✅ تم حفظ النتيجة على هذا الجهاز، لكن لم يتم تأكيد مزامنتها بالسحابة. حدّثي الاتصال ثم احفظي مرة أخرى.', cloudOk?'ok':'bad');
+    try{ if(cloudOk && typeof window.showFancyAlert==='function') window.showFancyAlert('تم الحفظ ✅','تم تثبيت نتيجة الطالب/ة في جدول المتسابقين وبين الأجهزة.'); }catch(e){}
+    return false;
+  }
+  function bind(prefix){
+    var btn=byId(prefix+'SaveResultBtn');
+    if(btn && btn.dataset.saraFinalStable!=='1'){
+      var clone=btn.cloneNode(true);
+      clone.dataset.saraFinalStable='1';
+      btn.parentNode.replaceChild(clone,btn);
+      clone.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();save(prefix);return false;},true);
+    }
+  }
+  function run(){bind('ctrl');bind('mctrl')}
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',run); else run();
+  setTimeout(run,300); setTimeout(run,1200); setTimeout(run,2500);
+})();
+</script>
+
+
+
+<!-- ===== إضافة نهائية: اختيار عدة طلاب لإدخال نفس النتيجة مرة واحدة ===== -->
+<style id="sara-bulk-student-results-style">
+  .bulkResultBox{
+    margin-top:10px;padding:12px;border-radius:20px;
+    background:linear-gradient(135deg,rgba(39,70,83,.07),rgba(201,161,95,.14));
+    border:1px solid rgba(201,161,95,.22);
+  }
+  .bulkResultHead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:9px;color:#274653;font-weight:1000;font-size:13px;line-height:1.8}
+  .bulkCount{display:inline-flex;align-items:center;justify-content:center;min-width:34px;padding:5px 9px;border-radius:999px;background:#fff;color:#6a5451;border:1px solid rgba(0,0,0,.08);font-weight:1000;font-size:12px}
+  .bulkTools{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:9px}
+  .bulkTools button{border:0;border-radius:14px;padding:10px 8px;font-weight:1000;font-size:12px;cursor:pointer;background:linear-gradient(135deg,#f7eee4,#edd6bc);color:#6a5451}
+  .bulkSearch{margin-bottom:9px}
+  .bulkList{max-height:230px;overflow:auto;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:16px;padding:8px;display:grid;gap:6px;scrollbar-width:thin}
+  .bulkItem{display:grid;grid-template-columns:auto 1fr;align-items:center;gap:8px;padding:9px 10px;border-radius:14px;background:#fffaf3;border:1px solid rgba(0,0,0,.04);font-size:12px;font-weight:900;color:#274653;line-height:1.7;cursor:pointer}
+  .bulkItem input{width:18px;height:18px;accent-color:#567e86}
+  .bulkItem small{display:block;color:#6b7280;font-size:11px;font-weight:800;margin-top:1px}
+  .bulkSaveBtn{background:linear-gradient(135deg,#274653,#567e86,#c9a15f)!important;color:#fff!important;box-shadow:0 12px 24px rgba(39,70,83,.16)!important}
+  .bulkResultHint{margin-top:8px;color:#6b7280;font-size:12px;font-weight:900;line-height:1.8;text-align:center}
+  @media(max-width:520px){.bulkTools{grid-template-columns:1fr}.bulkList{max-height:260px}.bulkItem{font-size:11px}}
+</style>
+<script id="sara-bulk-student-results-script">
+(function(){
+  if(window.__saraBulkStudentResults) return;
+  window.__saraBulkStudentResults=true;
+  const LOCAL_KEY='masar_mobile_records';
+  const COLLECTION='masar_aladad_site';
+  const DOC='records';
+  function el(id){return document.getElementById(id)}
+  function qs(s,r){return (r||document).querySelector(s)}
+  function qsa(s,r){return Array.from((r||document).querySelectorAll(s))}
+  function clean(v){return String(v||'').replace(/\D/g,'').replace(/^966/,'0')}
+  function norm(v){return String(v||'').trim().replace(/\s+/g,' ')}
+  function esc(v){return String(v||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+  function readLocal(){try{if(typeof window.getRecords==='function'){let r=window.getRecords();if(Array.isArray(r))return r}}catch(e){}try{let r=JSON.parse(localStorage.getItem(LOCAL_KEY)||'[]');return Array.isArray(r)?r:[]}catch(e){return[]}}
+  async function readLatest(){
+    try{
+      const db=window.firebaseDb || (typeof firebaseDb!=='undefined'?firebaseDb:null);
+      if(db && db.collection){
+        const snap=await db.collection(COLLECTION).doc(DOC).get();
+        if(snap && snap.exists){
+          const data=snap.data()||{};
+          const rows=Array.isArray(data.value)?data.value:(Array.isArray(data.records)?data.records:null);
+          if(rows) return rows;
+        }
+      }
+    }catch(e){}
+    return readLocal();
+  }
+  function writeLocal(rows){
+    rows=Array.isArray(rows)?rows:[];
+    try{localStorage.setItem(LOCAL_KEY,JSON.stringify(rows))}catch(e){}
+    try{if(typeof window.setRecords==='function') window.setRecords(rows)}catch(e){}
+  }
+  async function writeCloud(rows){
+    try{
+      const db=window.firebaseDb || (typeof firebaseDb!=='undefined'?firebaseDb:null);
+      if(db && db.collection){
+        await db.collection(COLLECTION).doc(DOC).set({value:rows,updatedAt:new Date().toLocaleString('ar-SA'),bulkStudentResults:true},{merge:true});
+      }
+    }catch(e){}
+  }
+  function makeKey(r,idx){return encodeURIComponent([norm(r&&r.name),norm(r&&r.grade),clean(r&&(r.phone||r.parentPhone||r.statusPhone)),idx].join('|'))}
+  function isActive(r){return r && !r.deleted && !r.cancelled && norm(r.name)}
+  function stageEntered(v){v=norm(v);return !!v && v!=='لم يبدأ' && v!=='—'}
+  function finalValue(s1,s2,s3,win){
+    if(win==='فائز') return 'فائز';
+    if(win==='غير فائز') return 'غير فائز';
+    if(s3 && s3!=='لم يبدأ') return s3;
+    if(s2 && s2!=='لم يبدأ') return s2;
+    if(s1 && s1!=='لم يبدأ') return s1;
+    return 'بانتظار النهائي';
+  }
+  function getStageValues(prefix){
+    const s1=norm(el(prefix+'StageOne')&&el(prefix+'StageOne').value)||'لم يبدأ';
+    const s2=norm(el(prefix+'StageTwo')&&el(prefix+'StageTwo').value)||'لم يبدأ';
+    const s3=norm(el(prefix+'StageThree')&&el(prefix+'StageThree').value)||'لم يبدأ';
+    const win=norm(el(prefix+'WinStage')&&el(prefix+'WinStage').value)||'لم يبدأ';
+    const note=norm(el(prefix+'ResultNote')&&el(prefix+'ResultNote').value);
+    return {s1,s2,s3,win,note};
+  }
+  function applyPatch(row,vals){
+    const entered={stage1:stageEntered(vals.s1),stage2:stageEntered(vals.s2),stage3:stageEntered(vals.s3),win:stageEntered(vals.win)};
+    return Object.assign({},row,{
+      phone:clean(row.phone||row.parentPhone||row.statusPhone),
+      stageOne:vals.s1, nomination:vals.s1,
+      stageTwo:vals.s2, sorting:vals.s2,
+      stageThree:vals.s3, winStage:vals.win,
+      final:finalValue(vals.s1,vals.s2,vals.s3,vals.win),
+      resultNote:vals.note,
+      resultEnteredStages:entered,
+      stageOneEntered:entered.stage1,
+      stageTwoEntered:entered.stage2,
+      stageThreeEntered:entered.stage3,
+      winStageEntered:entered.win,
+      updatedAt:new Date().toLocaleString('ar-SA')
+    });
+  }
+  function message(prefix,text,ok){
+    const m=el(prefix+'ResultMsg');
+    if(!m) return;
+    m.className=ok?'notice resultSaveSuccessVip':'notice';
+    m.textContent=text;
+  }
+  function selectedKeys(prefix){return qsa('#'+prefix+'BulkResultList input[type="checkbox"]:checked').map(c=>c.value)}
+  function updateCount(prefix){const n=selectedKeys(prefix).length; const c=el(prefix+'BulkCount'); if(c)c.textContent=n;}
+  function rowsForList(){return readLocal().map((r,i)=>({r,i,key:makeKey(r,i)})).filter(x=>isActive(x.r));}
+  function renderBulk(prefix){
+    const list=el(prefix+'BulkResultList'); if(!list) return;
+    const old=new Set(selectedKeys(prefix));
+    const search=norm(el(prefix+'BulkSearch')&&el(prefix+'BulkSearch').value).toLowerCase();
+    const items=rowsForList().filter(x=>{
+      const hay=[x.r.name,x.r.grade,x.r.phone||x.r.parentPhone||x.r.statusPhone].join(' ').toLowerCase();
+      return !search || hay.indexOf(search)>-1;
+    });
+    if(!items.length){list.innerHTML='<div class="bulkResultHint">لا توجد أسماء مطابقة.</div>'; updateCount(prefix); return;}
+    list.innerHTML=items.map(x=>{
+      const phone=clean(x.r.phone||x.r.parentPhone||x.r.statusPhone);
+      return '<label class="bulkItem"><input type="checkbox" value="'+esc(x.key)+'" '+(old.has(x.key)?'checked':'')+'><span>'+esc(x.r.name||'بدون اسم')+'<small>'+esc([x.r.grade||'',phone?('ولي الأمر: '+phone):''].filter(Boolean).join(' - '))+'</small></span></label>';
+    }).join('');
+    updateCount(prefix);
+  }
+  function inject(prefix){
+    const sel=el(prefix+'ResultStudentSelect'); if(!sel || el(prefix+'BulkResultBox')) return;
+    const field=sel.closest('.field') || sel.parentElement;
+    const box=document.createElement('div');
+    box.className='bulkResultBox'; box.id=prefix+'BulkResultBox';
+    box.innerHTML='<div class="bulkResultHead"><span>اختيار أكثر من طالب/ة لنفس النتيجة</span><span class="bulkCount" id="'+prefix+'BulkCount">0</span></div>'+ 
+      '<input class="input bulkSearch" id="'+prefix+'BulkSearch" placeholder="بحث سريع بالاسم أو الصف أو رقم ولي الأمر">'+
+      '<div class="bulkTools"><button type="button" id="'+prefix+'BulkSelectVisible">تحديد الظاهر</button><button type="button" id="'+prefix+'BulkClear">مسح التحديد</button></div>'+ 
+      '<div class="bulkList" id="'+prefix+'BulkResultList"></div>'+ 
+      '<div class="bulkResultHint">عند تحديد عدة طلاب، سيتم تطبيق حالات المراحل والملاحظة نفسها عليهم جميعًا.</div>';
+    field.insertAdjacentElement('afterend',box);
+    const oldSave=el(prefix+'SaveResultBtn');
+    if(oldSave && !el(prefix+'BulkSaveResultBtn')){
+      const newSave=oldSave.cloneNode(true);
+      newSave.id=prefix+'BulkSaveResultBtn';
+      newSave.classList.add('bulkSaveBtn');
+      newSave.textContent='حفظ النتيجة للطلاب المحددين';
+      oldSave.id=prefix+'OldSaveResultBtn';
+      oldSave.style.display='none';
+      oldSave.insertAdjacentElement('afterend',newSave);
+    }
+    renderBulk(prefix);
+    el(prefix+'BulkSearch').addEventListener('input',()=>renderBulk(prefix));
+    el(prefix+'BulkResultList').addEventListener('change',()=>updateCount(prefix));
+    el(prefix+'BulkSelectVisible').addEventListener('click',function(){qsa('#'+prefix+'BulkResultList input[type="checkbox"]').forEach(c=>c.checked=true);updateCount(prefix)});
+    el(prefix+'BulkClear').addEventListener('click',function(){qsa('#'+prefix+'BulkResultList input[type="checkbox"]').forEach(c=>c.checked=false);updateCount(prefix)});
+  }
+  function singleSelectedKey(prefix){
+    const sel=el(prefix+'ResultStudentSelect');
+    if(!sel || !sel.value) return '';
+    const opt=sel.selectedOptions&&sel.selectedOptions[0];
+    return (opt&&(opt.dataset.realKey||opt.dataset.key))||sel.value;
+  }
+  async function saveBulk(prefix){
+    let keys=selectedKeys(prefix);
+    if(!keys.length){ const one=singleSelectedKey(prefix); if(one) keys=[one]; }
+    if(!keys.length){message(prefix,'اختاري طالب/ة واحد على الأقل أو حددي عدة طلاب من القائمة.',false);return false;}
+    const vals=getStageValues(prefix);
+    let rows=await readLatest();
+    const keySet=new Set(keys);
+    let count=0;
+    rows=rows.map((r,i)=>{
+      if(keySet.has(makeKey(r,i))){ count++; return applyPatch(r,vals); }
+      return r;
+    });
+    // احتياط عند اختلاف ترتيب السجلات بين الأجهزة: نطابق بالاسم والصف والرقم بدون رقم الفهرس
+    if(count<keys.length){
+      keys.forEach(k=>{
+        try{
+          const decoded=decodeURIComponent(k).split('|');
+          const [name,grade,phone]=decoded;
+          const idx=rows.findIndex((r)=>norm(r.name)===name && norm(r.grade)===grade && clean(r.phone||r.parentPhone||r.statusPhone)===phone);
+          if(idx>=0 && !keySet.has(makeKey(rows[idx],idx))){rows[idx]=applyPatch(rows[idx],vals); count++;}
+        }catch(e){}
+      });
+    }
+    if(!count){message(prefix,'لم يتم العثور على الطلاب المحددين داخل البيانات.',false);return false;}
+    writeLocal(rows);
+    await writeCloud(rows);
+    try{if(typeof renderContestantsTable==='function')renderContestantsTable()}catch(e){}
+    try{if(typeof renderTable==='function')renderTable()}catch(e){}
+    try{if(typeof renderAdminDataTables==='function')renderAdminDataTables()}catch(e){}
+    try{if(typeof updateAdminViews==='function')updateAdminViews()}catch(e){}
+    renderBulk(prefix);
+    message(prefix,'✅ تم حفظ النتيجة وتحديث جدول المتسابقين لعدد '+count+' طالب/ة.',true);
+    return false;
+  }
+  function run(){['ctrl','mctrl'].forEach(inject)}
+  document.addEventListener('click',function(e){
+    const btn=e.target.closest&&e.target.closest('#ctrlBulkSaveResultBtn,#mctrlBulkSaveResultBtn');
+    if(!btn) return;
+    e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
+    const prefix=btn.id.indexOf('mctrl')===0?'mctrl':'ctrl';
+    saveBulk(prefix);
+    return false;
+  },true);
+  document.addEventListener('change',function(e){
+    if(e.target && (e.target.id==='ctrlResultStudentSelect'||e.target.id==='mctrlResultStudentSelect')){
+      const prefix=e.target.id.indexOf('mctrl')===0?'mctrl':'ctrl';
+      setTimeout(()=>renderBulk(prefix),60);
+    }
+  },true);
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',run); else run();
+  window.addEventListener('load',run);
+  setTimeout(run,500); setTimeout(run,1500);
+})();
+</script>
+
 </body>
 </html>
 <script id="masar-real-language-fallback">
