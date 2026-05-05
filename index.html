@@ -10637,3 +10637,130 @@ document.addEventListener('click', function(e){
   window.addEventListener('load',run);
 })();
 </script>
+
+<!-- SARA FIX 2026-05-05: حماية الموقع من الكتابة التلقائية عند دخول الزوار -->
+<script id="sara-visitor-readonly-and-safe-write-guard">
+(function(){
+  'use strict';
+  if(window.__saraVisitorReadonlySafeWriteGuard) return;
+  window.__saraVisitorReadonlySafeWriteGuard = true;
+
+  var WRITE_WINDOW_MS = 7000;
+  window.MASAR_ADMIN_MODE = false;
+  window.__MASAR_USER_WRITE_INTENT = 0;
+  window.__MASAR_LAST_WRITE_REASON = '';
+
+  function now(){ return Date.now ? Date.now() : new Date().getTime(); }
+  function byId(id){ return document.getElementById(id); }
+  function visible(el){
+    if(!el) return false;
+    if(el.classList && (el.classList.contains('hidden') || el.classList.contains('adminHidden'))) return false;
+    var st = window.getComputedStyle ? getComputedStyle(el) : null;
+    return !st || (st.display !== 'none' && st.visibility !== 'hidden' && st.opacity !== '0');
+  }
+  function adminOpen(){
+    return visible(byId('adminPanel')) || visible(byId('manageExclusivePanel')) || window.MASAR_ADMIN_MODE === true;
+  }
+  function markWrite(reason){
+    window.__MASAR_USER_WRITE_INTENT = now();
+    window.__MASAR_LAST_WRITE_REASON = reason || 'user-action';
+  }
+  function isWriteButton(target){
+    if(!target || !target.closest) return false;
+    var el = target.closest('button,input[type="button"],input[type="submit"],.serviceBtn,.saveBtn,.removeStageRowBtn');
+    if(!el) return false;
+    var id = String(el.id || '');
+    var txt = String(el.textContent || el.value || '').trim();
+    var writeIds = /(save|Save|add|Add|delete|Delete|cancel|Cancel|Done|done|extend|Extend|registerSave|editSave|SaveResult|Countdown|Stage|Remove|remove)/;
+    var writeText = /(حفظ|تسجيل|تعديل|حذف|إلغاء|تمديد|إنهاء|تنفيذ|إضافة|اعتماد)/;
+    return writeIds.test(id) || writeText.test(txt);
+  }
+  function writeAllowed(){
+    if(adminOpen()) return true;
+    return (now() - Number(window.__MASAR_USER_WRITE_INTENT || 0)) < WRITE_WINDOW_MS;
+  }
+
+  document.addEventListener('click', function(e){
+    if(isWriteButton(e.target)) markWrite('click');
+  }, true);
+  document.addEventListener('submit', function(){ markWrite('submit'); }, true);
+
+  // عند نجاح الدخول الإداري نجعل الكتابة متاحة، وعند الخروج نقفلها.
+  document.addEventListener('click', function(e){
+    var t=e.target;
+    if(t && t.closest && t.closest('#adminLoginBtn,#manageLoginBtn')){
+      setTimeout(function(){ if(adminOpen()) window.MASAR_ADMIN_MODE = true; }, 200);
+      setTimeout(function(){ if(adminOpen()) window.MASAR_ADMIN_MODE = true; }, 900);
+    }
+    if(t && t.closest && t.closest('#ctrlLogoutBtn,#mctrlLogoutBtn,#manageLogoutBtn')){
+      window.MASAR_ADMIN_MODE = false;
+      window.__MASAR_USER_WRITE_INTENT = 0;
+    }
+  }, true);
+
+  function patchGlobalSetter(name){
+    var old = window[name];
+    if(typeof old !== 'function' || old.__saraGuarded) return;
+    var wrapped = function(){
+      if(!writeAllowed()){
+        console.warn('تم منع حفظ تلقائي من زائر:', name, window.__MASAR_LAST_WRITE_REASON || 'no-reason');
+        return Array.isArray(arguments[0]) ? arguments[0] : undefined;
+      }
+      return old.apply(this, arguments);
+    };
+    wrapped.__saraGuarded = true;
+    window[name] = wrapped;
+  }
+
+  function installFunctionGuards(){
+    ['setRecords','setUsers','setActivityLog','setCountdownSettings','setStageSettings','syncCloudDoc','addDeletedRecordTombstones'].forEach(patchGlobalSetter);
+  }
+
+  function patchFirestore(){
+    try{
+      var db = window.firebaseDb || (window.firebase && firebase.firestore ? firebase.firestore() : null);
+      if(!db || !db.collection || db.__saraGuardedFirestore) return;
+      db.__saraGuardedFirestore = true;
+      var originalCollection = db.collection.bind(db);
+      db.collection = function(){
+        var col = originalCollection.apply(db, arguments);
+        if(!col || col.__saraGuardedCollection) return col;
+        col.__saraGuardedCollection = true;
+        var oldDoc = col.doc && col.doc.bind(col);
+        if(oldDoc){
+          col.doc = function(){
+            var doc = oldDoc.apply(col, arguments);
+            if(doc && !doc.__saraGuardedDoc){
+              doc.__saraGuardedDoc = true;
+              ['set','update','delete'].forEach(function(method){
+                if(typeof doc[method] === 'function'){
+                  var old = doc[method].bind(doc);
+                  doc[method] = function(){
+                    if(!writeAllowed()){
+                      console.warn('تم منع كتابة تلقائية إلى Firebase من زائر:', method);
+                      return Promise.resolve(false);
+                    }
+                    return old.apply(doc, arguments);
+                  };
+                }
+              });
+            }
+            return doc;
+          };
+        }
+        return col;
+      };
+    }catch(e){}
+  }
+
+  function installAll(){ installFunctionGuards(); patchFirestore(); }
+  installAll();
+  setTimeout(installAll, 200);
+  setTimeout(installAll, 1000);
+  setTimeout(installAll, 2500);
+
+  // تصحيح إضافي: أي صفحة زائر لا تفعل وضع الإدارة.
+  window.masarAllowNextWrite = markWrite;
+  window.masarIsWriteAllowed = writeAllowed;
+})();
+</script>
