@@ -8926,6 +8926,204 @@ document.addEventListener('click', function(e){
 })();
 </script>
 
+
+
+<!-- ===== Sara final fix: زوار قراءة فقط + تنظيف تكرار أسماء الطلاب ===== -->
+<style id="sara-final-viewer-and-duplicates-style">
+  .firebaseStatusBadge.warning{background:#fff7ed!important;color:#9a3412!important;border-color:#fed7aa!important}
+  .saraCleanNotice{margin:10px 0 12px;padding:11px 13px;border-radius:16px;background:linear-gradient(135deg,rgba(34,197,94,.10),rgba(201,161,95,.14));border:1px solid rgba(34,197,94,.22);color:#166534;font-size:13px;font-weight:1000;line-height:1.8;text-align:center}
+</style>
+<script id="sara-final-viewer-and-duplicates-fix">
+(function(){
+  'use strict';
+  var DATA_KEYS = {
+    records:'masar_mobile_records', users:'masar_mobile_users', activity:'masar_mobile_activity_log',
+    countdown:'masar_mobile_countdown_settings', deleted:'masar_mobile_deleted_records', form:'masar_mobile_form_state'
+  };
+  var PUBLIC_WRITE_IDS = {
+    saveBtn:1, editSaveBtn:1, registerSaveBtn:1
+  };
+  var ADMIN_WRITE_IDS = /^(mctrl|ctrl|stage|saveStage|saveMain|extendMain|mergedPdf|vipSaveUser|sendStaff|verifyStaff|changeVerified)/;
+  var publicWriteUntil = 0;
+  var lastCleanNotice = '';
+  function $(id){return document.getElementById(id)}
+  function arr(x){return Array.isArray(x)?x:[]}
+  function txt(v){return String(v==null?'':v).replace(/\s+/g,' ').trim()}
+  function phone(v){return String(v==null?'':v).replace(/\D/g,'')}
+  function adminVisible(){
+    function vis(el){
+      if(!el) return false;
+      if(el.classList && (el.classList.contains('hidden') || el.classList.contains('adminHidden'))) return false;
+      var st = getComputedStyle(el);
+      return st.display!=='none' && st.visibility!=='hidden' && st.opacity!=='0';
+    }
+    return window.MASAR_ADMIN_MODE===true || vis($('adminPanel')) || vis($('manageExclusivePanel'));
+  }
+  function allowPublicWrite(){ publicWriteUntil = Date.now()+7000; try{window.masarAllowNextWrite && window.masarAllowNextWrite('exact-public-write')}catch(e){} }
+  function strictWriteAllowed(){ return adminVisible() || Date.now() < publicWriteUntil; }
+
+  // لا نجعل الاستعلام أو فتح الصفحات أو العدادات يملك صلاحية كتابة. فقط أزرار التسجيل/الحفظ المحددة.
+  document.addEventListener('click', function(e){
+    var b=e.target && e.target.closest && e.target.closest('button,input[type="button"],input[type="submit"]');
+    if(!b) return;
+    var id=b.id||'';
+    if(PUBLIC_WRITE_IDS[id] || ADMIN_WRITE_IDS.test(id)) allowPublicWrite();
+    if(id==='checkStatusBtn' || id==='ctrlSearchBtn' || id==='mctrlSearchBtn'){
+      publicWriteUntil = 0;
+      window.__MASAR_USER_WRITE_INTENT = 0;
+    }
+  }, true);
+
+  function wrapFunction(name){
+    var old=window[name];
+    if(typeof old!=='function' || old.__saraStrictFinal) return;
+    var fn=function(){
+      if(!strictWriteAllowed()){
+        console.warn('زائر قراءة فقط: تم منع كتابة غير مقصودة:', name);
+        return Array.isArray(arguments[0]) ? arguments[0] : undefined;
+      }
+      return old.apply(this, arguments);
+    };
+    fn.__saraStrictFinal=true;
+    window[name]=fn;
+  }
+  function installStrictWriteGuard(){
+    ['setRecords','setUsers','setActivityLog','setCountdownSettings','setStageSettings','syncCloudDoc','pushAllLocalDataToFirebase','addDeletedRecordTombstones'].forEach(wrapFunction);
+    try{
+      var db=window.firebaseDb || (window.firebase && firebase.firestore ? firebase.firestore() : null);
+      if(db && db.collection && !db.__saraStrictFinal){
+        db.__saraStrictFinal=true;
+        var oldCollection=db.collection.bind(db);
+        db.collection=function(){
+          var col=oldCollection.apply(db, arguments);
+          if(!col || col.__saraStrictFinalCol) return col;
+          col.__saraStrictFinalCol=true;
+          var oldDoc=col.doc && col.doc.bind(col);
+          if(oldDoc){
+            col.doc=function(){
+              var doc=oldDoc.apply(col, arguments);
+              if(doc && !doc.__saraStrictFinalDoc){
+                doc.__saraStrictFinalDoc=true;
+                ['set','update','delete'].forEach(function(m){
+                  if(typeof doc[m]==='function'){
+                    var old=doc[m].bind(doc);
+                    doc[m]=function(){
+                      if(!strictWriteAllowed()){
+                        console.warn('زائر قراءة فقط: تم منع كتابة Firebase غير مقصودة:', m);
+                        return Promise.resolve(false);
+                      }
+                      return old.apply(doc, arguments);
+                    };
+                  }
+                });
+              }
+              return doc;
+            };
+          }
+          return col;
+        };
+      }
+    }catch(e){}
+  }
+
+  function updatedMs(r){
+    if(!r) return 0;
+    if(typeof r.__updatedMs==='number') return r.__updatedMs;
+    if(typeof r.updatedMs==='number') return r.updatedMs;
+    var d=Date.parse(String(r.updatedAt||r.createdAt||r.stamp||''));
+    return isFinite(d)?d:0;
+  }
+  function cleanKey(r){
+    r=r||{};
+    var name=txt(r.name||r.studentName||r.registerName).replace(/[ـًٌٍَُِّْ]/g,'');
+    var ph=phone(r.phone||r.parentPhone||r.statusPhone);
+    var grade=txt(r.grade||'');
+    if(!name && !ph) return '';
+    return [name, ph, grade].join('|');
+  }
+  function dedupeRecords(list){
+    var map=new Map(), removed=0;
+    arr(list).forEach(function(r){
+      if(!r || r.deleted) return;
+      var k=cleanKey(r);
+      if(!k) return;
+      var old=map.get(k);
+      if(!old){ map.set(k,r); return; }
+      removed++;
+      var keep = updatedMs(r) >= updatedMs(old) ? Object.assign({}, old, r) : Object.assign({}, r, old);
+      map.set(k, keep);
+    });
+    var out=Array.from(map.values());
+    out.__removedDuplicates = removed;
+    return out;
+  }
+  window.saraDedupeContestants = dedupeRecords;
+
+  function currentRecordsRaw(){
+    try{ return JSON.parse(localStorage.getItem(DATA_KEYS.records)||'[]')||[]; }catch(e){ return []; }
+  }
+  function saveCleanIfAdmin(){
+    if(!adminVisible()) return;
+    var raw=currentRecordsRaw();
+    var clean=dedupeRecords(raw);
+    if(clean.__removedDuplicates>0){
+      allowPublicWrite();
+      try{
+        localStorage.setItem(DATA_KEYS.records, JSON.stringify(clean));
+        if(typeof window.setRecords==='function') window.setRecords(clean);
+        if(typeof window.syncCloudDoc==='function') window.syncCloudDoc((window.CLOUD_DOCS&&CLOUD_DOCS.records)||'records', clean);
+      }catch(e){}
+      lastCleanNotice='تم حذف/دمج '+clean.__removedDuplicates+' اسم/سجل متكرر من جدول المتسابقين.';
+      showCleanNotice();
+    }
+  }
+  function showCleanNotice(){
+    if(!lastCleanNotice) return;
+    var host=$('manageControlCard') || document.querySelector('#adminPanel .adminControlCard') || $('adminPanel') || $('manageExclusivePanel');
+    if(!host || host.querySelector('.saraCleanNotice')) return;
+    var n=document.createElement('div');
+    n.className='saraCleanNotice';
+    n.textContent=lastCleanNotice;
+    host.insertBefore(n, host.firstChild);
+  }
+
+  function wrapGetRecords(){
+    var old=window.getRecords;
+    if(typeof old==='function' && !old.__saraDedupedFinal){
+      var fn=function(){ return dedupeRecords(old.apply(this, arguments)); };
+      fn.__saraDedupedFinal=true;
+      window.getRecords=fn;
+    }
+  }
+  function updateFirebaseBadge(){
+    var ready=!!window.firebaseReady || (typeof firebaseReady!=='undefined' && !!firebaseReady);
+    document.querySelectorAll('.firebaseStatusBadge').forEach(function(b){
+      b.classList.toggle('ready', ready);
+      b.classList.toggle('warning', !ready);
+      var s=b.querySelector('span:last-child');
+      if(s) s.textContent = ready ? 'الحفظ السحابي Firebase متصل ومزامن' : 'تنبيه: الاتصال بـ Firebase لم يكتمل؛ الزوار قراءة فقط ولن يغيّروا البيانات';
+    });
+    if(!ready && typeof window.initFirebasePersistence==='function'){
+      try{ window.initFirebasePersistence(); }catch(e){}
+    }
+  }
+  function refreshTables(){
+    try{ if(typeof window.renderContestantsTable==='function') window.renderContestantsTable(); }catch(e){}
+    try{ if(typeof window.refreshControlStudentLists==='function') window.refreshControlStudentLists(); }catch(e){}
+  }
+  function boot(){
+    installStrictWriteGuard();
+    wrapGetRecords();
+    updateFirebaseBadge();
+    refreshTables();
+    saveCleanIfAdmin();
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', boot); else boot();
+  window.addEventListener('load', boot);
+  setInterval(function(){ installStrictWriteGuard(); wrapGetRecords(); updateFirebaseBadge(); saveCleanIfAdmin(); }, 1800);
+})();
+</script>
+
 </body>
 </html>
 <script id="masar-real-language-fallback">
